@@ -1,0 +1,19 @@
+from flask import Blueprint
+from flask_restplus import Api
+from .logs import api as logs
+from .photos import api as photos
+# from .sessions import api as sessions
+# from .users import api as users
+
+blueprint = Blueprint('api', __name__)
+api = Api(
+    blueprint,
+    title='Fur fellas API',
+    version='1.0',
+    description=''
+)
+
+api.add_namespace(logs)
+api.add_namespace(photos)
+# api.add_namespace(sessions)
+# api.add_namespace(users)

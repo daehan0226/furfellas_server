@@ -1,7 +1,6 @@
 flask/venv/*
 flask/logs/*
 flask/__pychche__/*
-
+*.json
 *.pyc
 .env
-.json

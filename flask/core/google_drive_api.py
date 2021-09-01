@@ -10,6 +10,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 creds = None
 
 def init_google_service():
+    global creds
     if os.path.exists('token.json'):
         print("google api auth token exists")
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)

@@ -2,20 +2,20 @@ version: "3"
 
 services:
   flask_app:
-    container_name: flask_app
+    container_name: furfellas_server
     restart: always
     build: ./flask
     volumes:
       - ./flask/logs:/usr/src/flask_app/logs
     ports:
-      - "16983:8003"
+      - "16999:8080"
     command: gunicorn -c ./gunicorn.conf.py 'app:create_app()'
 
   nginx:
-    container_name: nginx
+    container_name: furfellas_nginx
     restart: always
     build: ./nginx
     ports:
-      - "8083:80"
+      - "8099:80"
     depends_on:
       - flask_app

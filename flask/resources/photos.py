@@ -31,7 +31,13 @@ def save_photo():
     return 
 
 def get_photos():
-    return
+    try:            
+        folder_id = get_folder_id()
+        files = get_file_list(folder_id)
+        return files
+    except:
+        traceback.print_exc()
+        return False
 
 
 parser_search = reqparse.RequestParser()
@@ -50,10 +56,7 @@ class Photos(CustomResource):
         '''List all photos'''
         try:            
             args = parser_search.parse_args()
-            print(args)
             photos = get_photos()
-            # folder_id = get_folder_id()
-            # files = get_file_list(folder_id)
             return self.send(status=200, result=photos)
 
         except:

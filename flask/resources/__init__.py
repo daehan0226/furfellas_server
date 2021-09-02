@@ -2,6 +2,7 @@ from flask import Blueprint
 from flask_restplus import Api
 from .logs import api as logs
 from .photos import api as photos
+from .actions import api as actions
 # from .sessions import api as sessions
 # from .users import api as users
 
@@ -15,5 +16,6 @@ api = Api(
 
 api.add_namespace(logs)
 api.add_namespace(photos)
+api.add_namespace(actions)
 # api.add_namespace(sessions)
 # api.add_namespace(users)

@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS `action` (
 );
 CREATE TABLE IF NOT EXISTS `location` (
     `id`                    INT(11) NOT NULL AUTO_INCREMENT,
+    `key`                   VARCHAR(1000),
     `name`                  VARCHAR(200) NOT NULL,
     PRIMARY KEY(`id`)
 );

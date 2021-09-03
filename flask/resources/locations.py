@@ -3,48 +3,47 @@ from flask_restplus import Namespace, reqparse
 from core.resource import CustomResource
 from core import db 
 
-api = Namespace('actions', description='actions related operations')
-
+api = Namespace('locations', description='locations related operations')
 
 parser_post = reqparse.RequestParser()
-parser_post.add_argument('name', type=str, required=True, help="action name")
+parser_post.add_argument('key', type=str, help="location key")
+parser_post.add_argument('name', type=str, required=True, help="location name")
 
-def get_actions():
+def get_locations():
     try:
-        actions = db.get_actions()
-        return actions
+        locations = db.get_locations()
+        return locations
     except:
         traceback.print_exc()
         return None
 
-
-def insert_action(name):
+def insert_location(name):
     try:
-        result = db.insert_action(name)
+        result = db.insert_location(name)
         return result
     except:
         traceback.print_exc()
         return None
 
 @api.route('/')
-class Actions(CustomResource):
-    @api.doc('Get all actions')
+class Locations(CustomResource):
+    @api.doc('Get all locations')
     def get(self):
         try:            
-            actions = get_actions()
-            if actions is None:
+            locations = get_locations()
+            if locations is None:
                 return self.send(status=500)
-            return self.send(status=200, result=actions)
+            return self.send(status=200, result=locations)
         except:
             traceback.print_exc()
             return self.send(status=500)
 
-    @api.doc('create a new action')
+    @api.doc('create a new location')
     @api.expect(parser_post)
     def post(self):
         try:  
             args = parser_post.parse_args()
-            result = insert_action(args['name'])
+            result = insert_location(args['name'])
             if result is None:            
                 return self.send(status=500)
             return self.send(status=201)
@@ -55,14 +54,14 @@ class Actions(CustomResource):
 
 
 @api.route('/<int:id_>')
-@api.param('id_', 'The action identifier')
-class Action(CustomResource):
-    @api.doc('update action name')
+@api.param('id_', 'The location identifier')
+class Location(CustomResource):
+    @api.doc('update location name')
     @api.expect(parser_post)
     def put(self, id_):
         try:            
             args = parser_post.parse_args()
-            result = db.update_action(id_, args['name'])
+            result = db.update_location(id_, args['name'])
             if result is None:
                 return self.send(status=500)
             return self.send(status=203)
@@ -70,10 +69,10 @@ class Action(CustomResource):
             traceback.print_exc()
             return self.send(status=500)
 
-    @api.doc('delete an action')
+    @api.doc('delete an location')
     def delete(self, id_):
         try:  
-            result= db.delete_action(id_)
+            result= db.delete_location(id_)
             if result is None:            
                 return self.send(status=500)
             return self.send(status=200)

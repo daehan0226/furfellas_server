@@ -18,15 +18,15 @@ CREATE TABLE IF NOT EXISTS `action` (
 );
 CREATE TABLE IF NOT EXISTS `location` (
     `id`                    INT(11) NOT NULL AUTO_INCREMENT,
-    `key`                   VARCHAR(1000),
+    `api_search_key`        VARCHAR(1000),
     `name`                  VARCHAR(200) NOT NULL,
     PRIMARY KEY(`id`)
 );
 CREATE TABLE IF NOT EXISTS `photo` (
     `id`                    INT(11) NOT NULL AUTO_INCREMENT,
     `type`                  INT(3),
-    `desc`                  VARCHAR(200) NOT NULL,
-    `file_name`             VARCHAR(1000) NOT NULL,
+    `description`           VARCHAR(200),
+    `image_id`              VARCHAR(1000) NOT NULL,
     `datetime`              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `upload_datetime`       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(`id`)

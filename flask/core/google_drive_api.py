@@ -32,12 +32,13 @@ def get_service():
     return service
 
 
-def get_file_list(folder_id):
+def get_file_list(folder_id, size):
+    size = 10 if size is None else size
     # Call the Drive v3 API
     service = get_service()
     results = service.files().list(
         q= f"'{folder_id}' in parents and trashed = false",
-        pageSize=10, fields="nextPageToken, files(id, name)").execute()
+        pageSize=size, fields="nextPageToken, files(id, name)").execute()
     items = results.get('files', [])
 
     if not items:

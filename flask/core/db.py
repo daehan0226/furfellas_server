@@ -8,7 +8,8 @@ import redis
 import pymysql
 from dotenv import load_dotenv
 
-from core.utils import generate_hashed_password
+from core.utils import generate_hashed_password, stringify_given_datetime_or_current_datetime
+
 
 # load dotenv in the base root
 APP_ROOT = os.path.join(os.path.dirname(__file__), '..')   # refers to application_top
@@ -152,6 +153,123 @@ def add_condition_to_query(sql, col, row, is_first_condition=True):
     return sql
 
 
+def insert_photo(type, description, image_id):
+    try:
+        with get_db() as conn:
+            current_datatime = stringify_given_datetime_or_current_datetime()
+            cur = conn.cursor()
+            sql = "INSERT into photo(type, description, image_id, upload_datetime) values (%s, %s, %s, %s)"
+            cur.execute(sql, (type, description.lower(), image_id, current_datatime))
+            conn.commit()
+            return cur.lastrowid
+    except:
+        traceback.print_exc()
+        return False
+
+def search_photos():
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            sql = """
+                SELECT
+                    *
+                FROM 
+                    photo
+            """
+            cur.execute(sql)
+            conn.commit()
+            res = cur.fetchall()
+        return res
+    except:
+        traceback.print_exc()
+        return None
+
+def get_photo_actions(photo_id):
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            sql = f"""
+                SELECT
+                    a.*
+                FROM 
+                    photo_action as pa
+                Inner Join
+                    action as a
+                ON
+                    a.id = pa.action_id
+                Where pa.photo_id={photo_id}
+            """
+            cur.execute(sql)
+            conn.commit()
+            res = cur.fetchall()
+        return res
+    except:
+        traceback.print_exc()
+        return None
+
+def get_photo_locations(photo_id):
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            sql = f"""
+                SELECT
+                    l.*
+                FROM 
+                    photo_location as pl
+                Inner Join
+                    location as l
+                ON
+                    l.id = pl.location_id
+                Where pl.photo_id={photo_id}
+            """
+            cur.execute(sql)
+            conn.commit()
+            res = cur.fetchall()
+        return res
+    except:
+        traceback.print_exc()
+        return None
+
+def update_photo(id_, type, desc, image_id):
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            sql = f"""
+                UPDATE 
+                    photo
+                SET
+                    type={type}
+                    desc='{desc.lower}'
+                    image_id='{image_id}'
+                WHERE
+                    id={id_}
+            """
+            cur.execute(sql)
+            conn.commit()
+        return True
+    except:
+        traceback.print_exc()
+        return None
+
+
+def delete_photo(id_):
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            sql = f"""
+                DELETE FROM 
+                    photo
+                WHERE 
+                    id={id_}
+            """
+            cur.execute(sql)
+            conn.commit()
+        return True
+    except:
+        traceback.print_exc()
+        return None
+
+
 def insert_action(name):
     try:
         with get_db() as conn:
@@ -287,6 +405,30 @@ def delete_location(id_):
             cur.execute(sql)
             conn.commit()
         return True
+    except:
+        traceback.print_exc()
+        return None
+
+def insert_photo_action(photo_id, actions):
+    try:
+        rows = [(photo_id, action) for action in actions]
+        with get_db() as conn:
+            cur = conn.cursor()
+            sql = "INSERT into photo_action(photo_id, action_id) values (%s,%s)"
+            cur.executemany(sql, rows)
+            conn.commit()
+    except:
+        traceback.print_exc()
+        return None
+
+def insert_photo_location(photo_id, locations):
+    try:
+        rows = [(photo_id, location) for location in locations]
+        with get_db() as conn:
+            cur = conn.cursor()
+            sql = "INSERT into photo_location(photo_id, location_id) values (%s,%s)"
+            cur.executemany(sql, rows)
+            conn.commit()
     except:
         traceback.print_exc()
         return None

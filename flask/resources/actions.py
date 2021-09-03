@@ -17,7 +17,6 @@ def get_actions():
         traceback.print_exc()
         return None
 
-
 def insert_action(name):
     try:
         result = db.insert_action(name)

@@ -18,22 +18,30 @@ CREATE TABLE IF NOT EXISTS `action` (
 );
 CREATE TABLE IF NOT EXISTS `location` (
     `id`                    INT(11) NOT NULL AUTO_INCREMENT,
-    `key`                   VARCHAR(1000),
+    `api_search_key`        VARCHAR(1000),
     `name`                  VARCHAR(200) NOT NULL,
     PRIMARY KEY(`id`)
 );
 CREATE TABLE IF NOT EXISTS `photo` (
     `id`                    INT(11) NOT NULL AUTO_INCREMENT,
     `type`                  INT(3),
-    `action_id`             INT(11),
-    `desc`                  VARCHAR(200) NOT NULL,
-    `location_id`           INT(11),
-    `file_name`             VARCHAR(1000) NOT NULL,
+    `description`           VARCHAR(200),
+    `image_id`              VARCHAR(1000) NOT NULL,
     `datetime`              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `upload_datetime`       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY(`id`),
-    CONSTRAINT FOREIGN KEY (`action_id`) REFERENCES `furfellas`.`action` (`id`) ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT FOREIGN KEY (`location_id`) REFERENCES `furfellas`.`location` (`id`) ON UPDATE CASCADE ON DELETE SET NULL
+    PRIMARY KEY(`id`)
+);
+CREATE TABLE IF NOT EXISTS `photo_action` (
+    `photo_id`              INT(11),
+    `action_id`             INT(11),
+    CONSTRAINT FOREIGN KEY (`photo_id`) REFERENCES `furfellas`.`photo` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FOREIGN KEY (`action_id`) REFERENCES `furfellas`.`action` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS `photo_location` (
+    `photo_id`              INT(11),
+    `location_id`           INT(11),
+    CONSTRAINT FOREIGN KEY (`photo_id`) REFERENCES `furfellas`.`photo` (`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FOREIGN KEY (`location_id`) REFERENCES `furfellas`.`location` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 );
 """
 

@@ -156,13 +156,13 @@ def add_condition_to_query(sql, col, row, is_first_condition=True):
     return sql
 
 
-def insert_photo(type, description, image_id):
+def insert_photo(type, description, image_id, location_id):
     try:
         with get_db() as conn:
             current_datatime = stringify_given_datetime_or_current_datetime()
             cur = conn.cursor()
-            sql = "INSERT into photo(type, description, image_id, upload_datetime) values (%s, %s, %s, %s)"
-            cur.execute(sql, (type, description.lower(), image_id, current_datatime))
+            sql = "INSERT into photo(type, description, image_id, location_id, upload_datetime) values (%s, %s, %s, %s)"
+            cur.execute(sql, (type, description.lower(), image_id, location_id, current_datatime))
             conn.commit()
             return cur.lastrowid
     except:
@@ -178,6 +178,10 @@ def search_photos():
                     *
                 FROM 
                     photo
+                JOIN
+                    location
+                On
+                    photo.location_id = location_id
             """
             cur.execute(sql)
             conn.commit()
@@ -201,29 +205,6 @@ def get_photo_actions(photo_id):
                 ON
                     a.id = pa.action_id
                 Where pa.photo_id={photo_id}
-            """
-            cur.execute(sql)
-            conn.commit()
-            res = cur.fetchall()
-        return res
-    except:
-        traceback.print_exc()
-        return None
-
-def get_photo_locations(photo_id):
-    try:
-        with get_db() as conn:
-            cur = conn.cursor()
-            sql = f"""
-                SELECT
-                    l.*
-                FROM 
-                    photo_location as pl
-                Inner Join
-                    location as l
-                ON
-                    l.id = pl.location_id
-                Where pl.photo_id={photo_id}
             """
             cur.execute(sql)
             conn.commit()

@@ -76,7 +76,7 @@ def init_db():
 
 def insert_defaults():
     _create_default_users()
-    insert_location("home")
+    insert_location("Not sure")
 
 def _create_default_users():
     
@@ -155,7 +155,6 @@ def add_condition_to_query(sql, col, row, is_first_condition=True):
         sql += f" {col}='{row}'"
     return sql
 
-
 def insert_photo(type, description, image_id, location_id):
     try:
         with get_db() as conn:
@@ -175,13 +174,13 @@ def search_photos():
             cur = conn.cursor()
             sql = """
                 SELECT
-                    *
+                    p.*, l.name as location_name
                 FROM 
-                    photo
+                    photo AS p
                 JOIN
-                    location
+                    location AS l
                 On
-                    photo.location_id = location_id
+                    p.location_id = l.id
             """
             cur.execute(sql)
             conn.commit()

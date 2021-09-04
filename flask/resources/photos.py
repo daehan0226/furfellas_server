@@ -30,13 +30,13 @@ def upload_photo(file):
 def save_photo(image_id, args):
     try:
         type = args.get('type') or 0
-        actions = args.get('actions') or []
-        location_id = args.get('location') or 0
+        actions = args.get('actions') or ""
+        location_id = args.get('location') or 1
         description = args.get('description') or ""
         photo_id = insert_photo(int(type), description, image_id, location_id)
         
-        if actions: 
-            insert_photo_action(photo_id, actions)
+        if actions:
+            insert_photo_action(photo_id, actions.split(','))
 
     except:
         traceback.print_exc()
@@ -65,7 +65,7 @@ parser_search.add_argument('size', type=str, help='Photo count', location="args"
 parser_create = reqparse.RequestParser()
 parser_create.add_argument("file", type=FileStorage, location='files', required=True)
 parser_create.add_argument('type', type=int, location="form", help="Alone or together")
-parser_create.add_argument('actions', type=str, location="form", help="action ids or new actions", action='append')
+parser_create.add_argument('actions', type=str, location="form", help="action ids or new actions")
 parser_create.add_argument('location', type=int, help='location ids or new locations', location="form")
 parser_create.add_argument('description', type=str, help='photo description', location="form")
 parser_create.add_argument('date', type=str, help='date of photo taken', location="form")

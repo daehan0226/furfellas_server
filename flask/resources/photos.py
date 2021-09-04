@@ -6,7 +6,8 @@ from werkzeug.datastructures import FileStorage
 from apiclient.http import MediaFileUpload
 from core.google_drive_api import get_file_list, get_service, get_folder_id
 from core.resource import CustomResource, json_serializer
-from core.db import insert_photo, insert_photo_action, search_photos, get_photo_actions
+from core.db import insert_photo, insert_photo_action, search_photos, get_photo_actions, delete_photo
+
 api = Namespace('photos', description='Photos related operations')
 
 def upload_photo(file):
@@ -102,13 +103,21 @@ class Photos(CustomResource):
             traceback.print_exc()
             return self.send(status=500)
 
-@api.route('/<id>')
-@api.param('id', 'The photo identifier')
+@api.route('/<id_>')
 @api.response(404, 'photo not found')
-class photo(Resource):
+class Photo(CustomResource):
     @api.doc('get_photo')
-    def get(self, id):
+    def get(self, id_):
         '''Fetch a photo given its identifier'''
         return "photo"
 
-    
+    @api.doc('delete a photo')
+    def delete(self, id_):
+        try:  
+            result= delete_photo(id_)
+            if result is None:            
+                return self.send(status=500)
+            return self.send(status=200)
+        except:
+            traceback.print_exc()
+            return self.send(status=500)

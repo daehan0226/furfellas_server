@@ -69,7 +69,7 @@ class Location(CustomResource):
             traceback.print_exc()
             return self.send(status=500)
 
-    @api.doc('delete an location')
+    @api.doc('delete a location')
     def delete(self, id_):
         try:  
             result= db.delete_location(id_)

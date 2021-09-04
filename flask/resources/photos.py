@@ -67,7 +67,7 @@ parser_search.add_argument('size', type=str, help='Photo count', location="args"
 
 parser_create = reqparse.RequestParser()
 parser_create.add_argument("file", type=FileStorage, location='files', required=True)
-parser_create.add_argument('types', type=int, location="args", help="Alone or together")
+parser_create.add_argument('types', type=int, location="args", help="Alone or together", action='append')
 parser_create.add_argument('actions', type=int, location="args", help="action ids or new actions", action='append')
 parser_create.add_argument('locations', type=int, help='location ids or new locations', location="args", action='append')
 parser_create.add_argument('description', type=str, help='photo description')

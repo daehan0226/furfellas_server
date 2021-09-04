@@ -71,9 +71,12 @@ def init_db():
                 except:
                     traceback.print_exc()
         conn.commit()
+    insert_defaults()
     
+
+def insert_defaults():
     _create_default_users()
-    
+    insert_location("home")
 
 def _create_default_users():
     
@@ -415,18 +418,6 @@ def insert_photo_action(photo_id, actions):
         with get_db() as conn:
             cur = conn.cursor()
             sql = "INSERT into photo_action(photo_id, action_id) values (%s,%s)"
-            cur.executemany(sql, rows)
-            conn.commit()
-    except:
-        traceback.print_exc()
-        return None
-
-def insert_photo_location(photo_id, locations):
-    try:
-        rows = [(photo_id, int(location)) for location in locations]
-        with get_db() as conn:
-            cur = conn.cursor()
-            sql = "INSERT into photo_location(photo_id, location_id) values (%s,%s)"
             cur.executemany(sql, rows)
             conn.commit()
     except:

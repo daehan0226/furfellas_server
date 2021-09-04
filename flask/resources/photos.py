@@ -33,7 +33,7 @@ def save_photo(image_id, args):
         actions = args.get('actions') or []
         locations = args.get('locations') or []
         description = args.get('description') or ""
-        photo_id = insert_photo(type, description, image_id)
+        photo_id = insert_photo(int(type), description, image_id)
         
         if actions: 
             insert_photo_action(photo_id, actions)

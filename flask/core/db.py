@@ -411,7 +411,7 @@ def delete_location(id_):
 
 def insert_photo_action(photo_id, actions):
     try:
-        rows = [(photo_id, action) for action in actions]
+        rows = [(photo_id, int(action)) for action in actions]
         with get_db() as conn:
             cur = conn.cursor()
             sql = "INSERT into photo_action(photo_id, action_id) values (%s,%s)"
@@ -423,7 +423,7 @@ def insert_photo_action(photo_id, actions):
 
 def insert_photo_location(photo_id, locations):
     try:
-        rows = [(photo_id, location) for location in locations]
+        rows = [(photo_id, int(location)) for location in locations]
         with get_db() as conn:
             cur = conn.cursor()
             sql = "INSERT into photo_location(photo_id, location_id) values (%s,%s)"

@@ -161,7 +161,7 @@ def insert_photo(type, description, image_id, location_id):
         with get_db() as conn:
             current_datatime = stringify_given_datetime_or_current_datetime()
             cur = conn.cursor()
-            sql = "INSERT into photo(type, description, image_id, location_id, upload_datetime) values (%s, %s, %s, %s)"
+            sql = "INSERT into photo(type, description, image_id, location_id, upload_datetime) values (%s, %s, %s, %s, %s)"
             cur.execute(sql, (type, description.lower(), image_id, location_id, current_datatime))
             conn.commit()
             return cur.lastrowid

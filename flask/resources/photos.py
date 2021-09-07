@@ -121,3 +121,28 @@ class Photo(CustomResource):
         except:
             traceback.print_exc()
             return self.send(status=500)
+
+@api.route('/types')
+class PhotoTypes(CustomResource):
+    @api.doc('list_types')
+    def get(self):
+        try:      
+            types = [
+                {
+                "id": 0,
+                "name": "Together"
+                },
+                {
+                "id": 1,
+                "name": "Aibi"
+                },
+                {
+                "id": 2,
+                "name": "Sevi"
+                },
+            ]      
+            return self.send(status=200, result=types)
+
+        except:
+            traceback.print_exc()
+            return self.send(status=500)

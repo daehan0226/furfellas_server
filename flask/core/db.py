@@ -168,7 +168,7 @@ def insert_photo(type, description, image_id, location_id):
         traceback.print_exc()
         return False
 
-def search_photos():
+def search_photos(types, locations, actions):
     try:
         with get_db() as conn:
             cur = conn.cursor()
@@ -180,9 +180,26 @@ def search_photos():
                     photo AS p
                 JOIN
                     location AS l
-                On
+                ON
                     p.location_id = l.id
-            """
+                RIGHT OUTER JOIN
+                    photo_action AS pa
+                ON
+                    p.id = pa.photo_id
+                """
+            if types or locations or actions:
+                conditions = []
+                if types:
+                    types_conditions = f"p.type in ({','.join(types)})"
+                    conditions.append(types_conditions)
+                if actions:
+                    actions_conditions = f"pa.action_id in ({','.join(actions)})"
+                    conditions.append(actions_conditions)
+                if locations:
+                    locations_conditions = f"p.location_id in ({','.join(locations)})"
+                    conditions.append(locations_conditions)
+                wheres = ' AND '.join(conditions)
+                sql = f"{sql} Where {wheres}"
             cur.execute(sql)
             conn.commit()
             res = cur.fetchall()

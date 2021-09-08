@@ -60,8 +60,21 @@ def save_photo(image_id, args):
         return False
 
 def get_photos(args):
-    try:            
-        photos = search_photos()
+    try:
+        types = []
+        locations = []
+        actions = []
+        if args["types"]:
+            types = args["types"].split(',')
+        
+        if args["locations"]:
+            locations = args["locations"].split(',')
+        
+        if args["actions"]:
+            actions = args["actions"].split(',')
+
+        photos = search_photos(types,locations, actions)
+
         for photo in photos:
             photo['datetime'] = json_serializer(photo['datetime'])
             photo['upload_datetime'] = json_serializer(photo['upload_datetime'])
@@ -81,9 +94,9 @@ def get_photos(args):
 
 
 parser_search = reqparse.RequestParser()
-parser_search.add_argument('types', type=int, location="args", help="Alone or together", action='append')
-parser_search.add_argument('actions', type=str, location="args", help="action ids or new actions", action='append')
-parser_search.add_argument('locations', type=str, help='location ids or new locations', location="args", action='append')
+parser_search.add_argument('types', type=str, location="args", help="Alone or together")
+parser_search.add_argument('actions', type=str, location="args", help="action ids or new actions")
+parser_search.add_argument('locations', type=str, help='location ids or new locations', location="args")
 parser_search.add_argument('size', type=str, help='Photo count', location="args")
 
 parser_create = reqparse.RequestParser()

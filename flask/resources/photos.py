@@ -6,7 +6,7 @@ from werkzeug.datastructures import FileStorage
 from apiclient.http import MediaFileUpload
 from core.google_drive_api import get_file_list, get_service, get_folder_id
 from core.resource import CustomResource, json_serializer
-from core.db import insert_photo, insert_photo_action, search_photos, get_photo_actions, delete_photo
+from core.db import insert_photo, insert_photo_action, search_photos, get_photo_actions, delete_photo, verify_photo_actions
 
 api = Namespace('photos', description='Photos related operations')
 
@@ -23,7 +23,17 @@ photo_types = [
                 "id": 2,
                 "name": "Sevi"
                 },
-            ]   
+            ]
+
+def filter_photos_by_actions(photos, actions):
+    filtered = []
+
+    for photo in photos:
+        photo_action = verify_photo_actions(photo["id"], actions)
+        if photo_action:
+            filtered.append(photo)
+
+    return filtered
 
 
 def upload_photo(file):
@@ -63,17 +73,17 @@ def get_photos(args):
     try:
         types = []
         locations = []
-        actions = []
         if args["types"]:
             types = args["types"].split(',')
         
         if args["locations"]:
             locations = args["locations"].split(',')
         
+        photos = search_photos(types,locations)
+
         if args["actions"]:
             actions = args["actions"].split(',')
-
-        photos = search_photos(types,locations, actions)
+            photos = filter_photos_by_actions(photos, actions)
 
         for photo in photos:
             photo['datetime'] = json_serializer(photo['datetime'])

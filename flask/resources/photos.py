@@ -79,7 +79,7 @@ def get_photos(args):
         if args["locations"]:
             locations = args["locations"].split(',')
         
-        photos = search_photos(types,locations)
+        photos = search_photos(types,locations, args["start_datetime"], args["end_datetime"])
 
         if args["actions"]:
             actions = args["actions"].split(',')
@@ -107,6 +107,8 @@ parser_search = reqparse.RequestParser()
 parser_search.add_argument('types', type=str, location="args", help="Alone or together")
 parser_search.add_argument('actions', type=str, location="args", help="action ids or new actions")
 parser_search.add_argument('locations', type=str, help='location ids or new locations', location="args")
+parser_search.add_argument('start_datetime', type=str, help='search start date', location="args")
+parser_search.add_argument('end_datetime', type=str, help='search end date', location="args")
 parser_search.add_argument('size', type=str, help='Photo count', location="args")
 
 parser_create = reqparse.RequestParser()

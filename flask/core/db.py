@@ -168,7 +168,7 @@ def insert_photo(type, description, image_id, location_id):
         traceback.print_exc()
         return False
 
-def search_photos(types, locations, actions):
+def search_photos(types, locations):
     try:
         with get_db() as conn:
             cur = conn.cursor()
@@ -182,19 +182,12 @@ def search_photos(types, locations, actions):
                     location AS l
                 ON
                     p.location_id = l.id
-                RIGHT OUTER JOIN
-                    photo_action AS pa
-                ON
-                    p.id = pa.photo_id
                 """
-            if types or locations or actions:
+            if types or locations:
                 conditions = []
                 if types:
                     types_conditions = f"p.type in ({','.join(types)})"
                     conditions.append(types_conditions)
-                if actions:
-                    actions_conditions = f"pa.action_id in ({','.join(actions)})"
-                    conditions.append(actions_conditions)
                 if locations:
                     locations_conditions = f"p.location_id in ({','.join(locations)})"
                     conditions.append(locations_conditions)
@@ -230,6 +223,30 @@ def get_photo_actions(photo_id):
     except:
         traceback.print_exc()
         return None
+
+
+def verify_photo_actions(photo_id, actions):
+    try:
+        with get_db() as conn:
+            cur = conn.cursor()
+            sql = f"""
+                SELECT
+                    pa.*
+                FROM 
+                    photo_action as pa
+                WHERE 
+                    pa.photo_id={photo_id}
+                AND
+                    pa.action_id in ({','.join(actions)})
+            """
+            cur.execute(sql)
+            conn.commit()
+            res = cur.fetchone()
+        return res
+    except:
+        traceback.print_exc()
+        return None
+
 
 def update_photo(id_, type, desc, image_id):
     try:

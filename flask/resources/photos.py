@@ -10,6 +10,22 @@ from core.db import insert_photo, insert_photo_action, search_photos, get_photo_
 
 api = Namespace('photos', description='Photos related operations')
 
+photo_types = [
+                {
+                "id": 0,
+                "name": "Together"
+                },
+                {
+                "id": 1,
+                "name": "Aibi"
+                },
+                {
+                "id": 2,
+                "name": "Sevi"
+                },
+            ]   
+
+
 def upload_photo(file):
     image_id = None
     filename = werkzeug.secure_filename(file.filename)
@@ -50,6 +66,13 @@ def get_photos(args):
             photo['datetime'] = json_serializer(photo['datetime'])
             photo['upload_datetime'] = json_serializer(photo['upload_datetime'])
             photo["actions"] = get_photo_actions(photo["id"])
+            photo["type"] = photo_types[photo["type"]]
+            photo["location"] = {
+                "id": photo["location_id"],
+                "name": photo["location_name"],
+            }
+            del photo["location_id"]
+            del photo["location_name"]
             
         return photos
     except:
@@ -127,21 +150,8 @@ class PhotoTypes(CustomResource):
     @api.doc('list_types')
     def get(self):
         try:      
-            types = [
-                {
-                "id": 0,
-                "name": "Together"
-                },
-                {
-                "id": 1,
-                "name": "Aibi"
-                },
-                {
-                "id": 2,
-                "name": "Sevi"
-                },
-            ]      
-            return self.send(status=200, result=types)
+            global photo_types
+            return self.send(status=200, result=photo_types)
 
         except:
             traceback.print_exc()

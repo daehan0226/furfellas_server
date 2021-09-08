@@ -174,7 +174,8 @@ def search_photos():
             cur = conn.cursor()
             sql = """
                 SELECT
-                    p.*, l.name as location_name
+                    p.*, 
+                    l.name as location_name
                 FROM 
                     photo AS p
                 JOIN

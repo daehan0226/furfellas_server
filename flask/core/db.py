@@ -168,9 +168,10 @@ def insert_photo(type, description, image_id, location_id):
         traceback.print_exc()
         return False
 
-def search_photos(types, locations):
+def search_photos(types, locations, search_start, search_end):
     try:
         with get_db() as conn:
+            conditions = []
             cur = conn.cursor()
             sql = """
                 SELECT
@@ -184,13 +185,19 @@ def search_photos(types, locations):
                     p.location_id = l.id
                 """
             if types or locations:
-                conditions = []
                 if types:
                     types_conditions = f"p.type in ({','.join(types)})"
                     conditions.append(types_conditions)
                 if locations:
                     locations_conditions = f"p.location_id in ({','.join(locations)})"
                     conditions.append(locations_conditions)
+            if search_start is not None:
+                search_start_conditions =  f"p.datetime > {search_start}"
+                conditions.append(search_start_conditions)
+            if search_end  is not None:
+                search_end_conditions =  f"p.datetime < {search_end}"
+                conditions.append(search_end_conditions)
+            if conditions:
                 wheres = ' AND '.join(conditions)
                 sql = f"{sql} Where {wheres}"
             cur.execute(sql)

@@ -8,28 +8,32 @@ import redis
 import pymysql
 from dotenv import load_dotenv
 
-from core.utils import generate_hashed_password, stringify_given_datetime_or_current_datetime
+from core.utils import (
+    generate_hashed_password,
+    stringify_given_datetime_or_current_datetime,
+)
 
 
 # load dotenv in the base root
-APP_ROOT = os.path.join(os.path.dirname(__file__), '..')   # refers to application_top
-dotenv_path = os.path.join(APP_ROOT, '.env')
+APP_ROOT = os.path.join(os.path.dirname(__file__), "..")  # refers to application_top
+dotenv_path = os.path.join(APP_ROOT, ".env")
 load_dotenv(dotenv_path)
 
-redis_host = os.getenv('REDIS_HOST')
-redis_port = os.getenv('REDIS_PORT')
-redis_password = os.getenv('REDIS_PASSWORD')
+redis_host = os.getenv("REDIS_HOST")
+redis_port = os.getenv("REDIS_PORT")
+redis_password = os.getenv("REDIS_PASSWORD")
 
-redis_store = redis.Redis(host=redis_host, port=redis_port, password=redis_password, 
-                decode_responses=True)
+redis_store = redis.Redis(
+    host=redis_host, port=redis_port, password=redis_password, decode_responses=True
+)
 
-db_host_dev = os.getenv('DB_HOST_DEV')
-db_host = os.getenv('DB_HOST')
-db_port = int(os.getenv('DB_PORT'))
-db_user = os.getenv('DB_USERNAME')
-db_pw = os.getenv('DB_PASSWORD')
-db_dataset = os.getenv('DB_DATABASE')
-db_charset = os.getenv('DB_CHARSET')
+db_host_dev = os.getenv("DB_HOST_DEV")
+db_host = os.getenv("DB_HOST")
+db_port = int(os.getenv("DB_PORT"))
+db_user = os.getenv("DB_USERNAME")
+db_pw = os.getenv("DB_PASSWORD")
+db_dataset = os.getenv("DB_DATABASE")
+db_charset = os.getenv("DB_CHARSET")
 
 db_info_kwargs = {
     "host": db_host_dev,
@@ -38,8 +42,9 @@ db_info_kwargs = {
     "password": db_pw,
     "db": db_dataset,
     "charset": db_charset,
-    "cursorclass": pymysql.cursors.DictCursor
+    "cursorclass": pymysql.cursors.DictCursor,
 }
+
 
 @contextmanager
 def get_db():
@@ -59,31 +64,33 @@ def get_db():
         pass
 
 
-
 def init_db():
     with get_db() as conn:
         from core import schema
-        sql_list= schema.schema.split(";")
+
+        sql_list = schema.schema.split(";")
         for sql in sql_list:
-            if sql != '' and sql != '\n':
+            if sql != "" and sql != "\n":
                 try:
                     conn.cursor().execute(sql)
                 except:
                     traceback.print_exc()
         conn.commit()
     insert_defaults()
-    
+
 
 def insert_defaults():
     _create_default_users()
-    insert_location("Not sure")
+    if not get_locations(name="Not sure"):
+        insert_location("Not sure")
+
 
 def _create_default_users():
-    
-    if not get_user(name='admin'):
-        ADMIN_NAME = os.getenv('ADMIN_NAME')
-        ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
-        ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
+
+    if not get_user(name="admin"):
+        ADMIN_NAME = os.getenv("ADMIN_NAME")
+        ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+        ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
         print("Created admin user")
         insert_user(ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD, 0)
 
@@ -103,6 +110,7 @@ def insert_user(user_name, email, password, user_type):
         traceback.print_exc()
         return False
 
+
 def get_users():
     try:
         with get_db() as conn:
@@ -120,6 +128,7 @@ def get_users():
         traceback.print_exc()
         return False
 
+
 def get_user(id_=None, name=None):
     try:
         with get_db() as conn:
@@ -133,7 +142,7 @@ def get_user(id_=None, name=None):
                 sql = add_condition_to_query(sql, "id", id_)
             elif name is not None:
                 sql = add_condition_to_query(sql, "name", name)
-        
+
             cur.execute(sql)
             conn.commit()
             res = cur.fetchone()
@@ -155,18 +164,23 @@ def add_condition_to_query(sql, col, row, is_first_condition=True):
         sql += f" {col}='{row}'"
     return sql
 
+
 def insert_photo(type, description, image_id, location_id):
     try:
         with get_db() as conn:
             current_datatime = stringify_given_datetime_or_current_datetime()
             cur = conn.cursor()
             sql = "INSERT into photo(type, description, image_id, location_id, upload_datetime) values (%s, %s, %s, %s, %s)"
-            cur.execute(sql, (type, description.lower(), image_id, location_id, current_datatime))
+            cur.execute(
+                sql,
+                (type, description.lower(), image_id, location_id, current_datatime),
+            )
             conn.commit()
             return cur.lastrowid
     except:
         traceback.print_exc()
         return False
+
 
 def search_photos(types, locations, search_start, search_end):
     try:
@@ -192,13 +206,13 @@ def search_photos(types, locations, search_start, search_end):
                     locations_conditions = f"p.location_id in ({','.join(locations)})"
                     conditions.append(locations_conditions)
             if search_start is not None:
-                search_start_conditions =  f"p.datetime > {search_start}"
+                search_start_conditions = f"p.datetime > {search_start}"
                 conditions.append(search_start_conditions)
-            if search_end  is not None:
-                search_end_conditions =  f"p.datetime < {search_end}"
+            if search_end is not None:
+                search_end_conditions = f"p.datetime < {search_end}"
                 conditions.append(search_end_conditions)
             if conditions:
-                wheres = ' AND '.join(conditions)
+                wheres = " AND ".join(conditions)
                 sql = f"{sql} Where {wheres}"
             cur.execute(sql)
             conn.commit()
@@ -207,6 +221,7 @@ def search_photos(types, locations, search_start, search_end):
     except:
         traceback.print_exc()
         return None
+
 
 def get_photo_actions(photo_id):
     try:
@@ -308,7 +323,8 @@ def insert_action(name):
         traceback.print_exc()
         return False
 
-def get_actions():
+
+def get_actions(id_=None, name=None):
     try:
         with get_db() as conn:
             cur = conn.cursor()
@@ -317,6 +333,16 @@ def get_actions():
                     *
                 FROM action
             """
+            if id_ is not None:
+                sql += f"""
+                    WHERE 
+                        id={id_}
+                """
+            elif name is not None:
+                sql += f"""
+                    WHERE 
+                        name='{name}'
+                """
             cur.execute(sql)
             conn.commit()
             res = cur.fetchall()
@@ -324,6 +350,7 @@ def get_actions():
     except:
         traceback.print_exc()
         return None
+
 
 def update_action(id_, name):
     try:
@@ -345,16 +372,24 @@ def update_action(id_, name):
         return None
 
 
-def delete_action(id_):
+def delete_action(id_=None, name=None):
     try:
         with get_db() as conn:
             cur = conn.cursor()
-            sql = f"""
+            sql = """
                 DELETE FROM 
                     action
-                WHERE 
-                    id={id_}
             """
+            if id_ is not None:
+                sql += f"""
+                    WHERE 
+                        id={id_}
+                """
+            elif name is not None:
+                sql += f"""
+                    WHERE 
+                        name='{name}'
+                """
             cur.execute(sql)
             conn.commit()
         return True
@@ -380,7 +415,8 @@ def insert_location(name, key=None):
         traceback.print_exc()
         return False
 
-def get_locations():
+
+def get_locations(name=None):
     try:
         with get_db() as conn:
             cur = conn.cursor()
@@ -389,6 +425,11 @@ def get_locations():
                     *
                 FROM location
             """
+            if name is not None:
+                sql += f"""
+                    WHERE 
+                        name='{name}'
+                """
             cur.execute(sql)
             conn.commit()
             res = cur.fetchall()
@@ -396,6 +437,7 @@ def get_locations():
     except:
         traceback.print_exc()
         return None
+
 
 def update_location(id_, name):
     try:
@@ -433,6 +475,7 @@ def delete_location(id_):
     except:
         traceback.print_exc()
         return None
+
 
 def insert_photo_action(photo_id, actions):
     try:

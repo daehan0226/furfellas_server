@@ -3,6 +3,9 @@ from flask_restplus import Namespace, reqparse
 from core.resource import CustomResource
 from core import db
 
+from core.models import Action as ActionModel
+from core.database import db as database
+
 api = Namespace("actions", description="actions related operations")
 
 
@@ -12,6 +15,30 @@ parser_action_name.add_argument("name", type=str, help="action name")
 
 parser_post = reqparse.RequestParser()
 parser_post.add_argument("name", type=str, required=True, help="action name")
+
+
+def creat_action(name):
+    action = ActionModel(name)
+    action.create()
+
+
+def get_actions(id=None, name=None):
+    result = None
+    if id is not None:
+        result = ActionModel.query.get(id)
+    elif name is not None:
+        result = print(ActionModel.query.filter_by(name=name).first())
+    else:
+        result = ActionModel.query.all()
+    return result
+
+
+def delete_action(id=None, name=None):
+    if id is not None:
+        ActionModel.query.filter_by(id=id).delete()
+    elif name is not None:
+        ActionModel.query.filter_by(name=name).delete()
+    database.session.commit()
 
 
 def insert_action(name):
@@ -29,6 +56,7 @@ class Actions(CustomResource):
     @api.expect(parser_action_name)
     def get(self):
         try:
+            delete_action(name="testing")
             args = parser_action_name.parse_args()
             actions = db.get_actions(name=args["name"])
             if actions is None:

@@ -25,7 +25,11 @@ def init_settings():
 
 def set_db(app):
     with app.app_context():
+        from core.models.action import Action
+        from core.models.location import Location
+
         db.create_all()
+        db.session.commit()
 
 
 def create_app():

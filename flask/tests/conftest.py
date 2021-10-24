@@ -3,7 +3,7 @@ import pytest
 from app import create_app
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-
+from core.models import Action
 
 from dotenv import load_dotenv
 
@@ -25,11 +25,18 @@ def client():
 @pytest.fixture()
 def db_engine():
     """yields a SQLAlchemy engine which is suppressed after the test session"""
-    engine_ = create_engine(os.getenv("SQLALCHEMY_DATABASE_URI"), echo=True)
+    engine_ = create_engine(os.getenv("SQLALCHEMY_TEST_DATABASE_URI"), echo=True)
 
     yield engine_
 
     engine_.dispose()
+
+
+@pytest.fixture()
+def tables(db_engine):
+    Action.metadata.create_all(db_engine)
+    yield
+    Action.metadata.drop_all(db_engine)
 
 
 @pytest.fixture()

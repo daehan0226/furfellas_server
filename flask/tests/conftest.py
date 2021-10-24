@@ -3,8 +3,7 @@ import pytest
 from app import create_app
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from core.models.action import Action
-from core.models.location import Location
+from core.models import Action, Location
 
 from dotenv import load_dotenv
 

@@ -3,7 +3,7 @@ from flask_restplus import Namespace, reqparse
 from core.resource import CustomResource
 from core import db
 
-from core.models.action import Action as ActionModel
+from core.models import Action as ActionModel
 from core.database import db as database
 
 api = Namespace("actions", description="actions related operations")

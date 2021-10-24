@@ -1,5 +1,4 @@
-from core.models.action import Action
-from core.models.location import Location
+from core.models import Action, Location
 
 
 def test_check_if_tables_created(db_engine, tables):

@@ -39,7 +39,7 @@ def tables(db_engine):
     TodoParent.metadata.create_all(db_engine)
     TodoChildren.metadata.create_all(db_engine)
     yield
-    # TODO: BUG - TEST STOPS
+    # TODO: BUG - TEST STOPS - Lock
     # Action.metadata.drop_all(db_engine)
     # Location.metadata.drop_all(db_engine)
     # TodoParent.metadata.drop_all(db_engine)

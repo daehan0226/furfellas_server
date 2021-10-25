@@ -3,7 +3,7 @@ import pytest
 from app import create_app
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from core.models import Action, Location, TodoParent
+from core.models import Action, Location, TodoParent, TodoChildren
 
 from dotenv import load_dotenv
 
@@ -37,10 +37,13 @@ def tables(db_engine):
     Action.metadata.create_all(db_engine)
     Location.metadata.create_all(db_engine)
     TodoParent.metadata.create_all(db_engine)
+    TodoChildren.metadata.create_all(db_engine)
     yield
-    Action.metadata.drop_all(db_engine)
-    Location.metadata.drop_all(db_engine)
-    TodoParent.metadata.drop_all(db_engine)
+    # TODO: BUG - TEST STOPS
+    # Action.metadata.drop_all(db_engine)
+    # Location.metadata.drop_all(db_engine)
+    # TodoParent.metadata.drop_all(db_engine)
+    # TodoChildren.metadata.drop_all(db_engine)
 
 
 @pytest.fixture()
@@ -55,6 +58,5 @@ def db_session(db_session_factory):
     session_ = db_session_factory()
 
     yield session_
-
     session_.rollback()
     session_.close()

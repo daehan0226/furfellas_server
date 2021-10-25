@@ -25,7 +25,7 @@ def init_settings():
 
 def set_db(app):
     with app.app_context():
-        from core.models import Action, Location, TodoParent
+        from core.models import Action, Location, TodoParent, TodoChildren
 
         db.create_all()
         db.session.commit()

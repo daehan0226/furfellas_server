@@ -36,7 +36,7 @@ class TodoParent(db.Model):
         return result
 
     def __repr__(self):
-        return f"{self.id} {self.name}"
+        return f"{self.id} {self.task}"
 
     def delete(self, id):
         if id is not None:

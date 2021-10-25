@@ -3,7 +3,7 @@ import pytest
 from app import create_app
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from core.models import Action, Location
+from core.models import Action, Location, TodoParent
 
 from dotenv import load_dotenv
 
@@ -36,9 +36,11 @@ def db_engine():
 def tables(db_engine):
     Action.metadata.create_all(db_engine)
     Location.metadata.create_all(db_engine)
+    TodoParent.metadata.create_all(db_engine)
     yield
     Action.metadata.drop_all(db_engine)
     Location.metadata.drop_all(db_engine)
+    TodoParent.metadata.drop_all(db_engine)
 
 
 @pytest.fixture()

@@ -1,9 +1,10 @@
-from core.models import Action, Location
+from core.models import Action, Location, TodoParent
 
 
 def test_check_if_tables_created(db_engine, tables):
     assert Action.__tablename__ in db_engine.table_names()
     assert Location.__tablename__ in db_engine.table_names()
+    assert TodoParent.__tablename__ in db_engine.table_names()
 
 
 def test_post_action(db_session, tables):

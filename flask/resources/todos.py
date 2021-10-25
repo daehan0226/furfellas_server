@@ -1,32 +1,30 @@
-from flask_restplus import Namespace
 from core.models import TodoParent
+
+import traceback
+from flask_restplus import Namespace, reqparse
+from core.resource import CustomResource
+from core import db
+
 
 api = Namespace("todos", description="todos related operations")
 
 
-def create_todo_parent(**kwargs):
-    todo_parent = TodoParent(
-        kwargs["task"], kwargs["repeat_interval"],
-        kwargs["start_datetime"], kwargs["finish_datetime"]
-    )
+def create_todo_parent(task, rpeat_interval, start_datetime, finish_datetime):
+    todo_parent = TodoParent(task, rpeat_interval, start_datetime, finish_datetime)
     todo_parent.create()
 
 
+def get_todos():
+    return TodoParent.query.all()
 
-todos = [
-    {
-        'id': 1,
-        "task": "Take medicine"
-    },
-    {
-        'id': 2,
-        "taks": "Have a bath"
-    }
-]
 
-def get_todos(id=None):
-    if id is not None:
-        for todo in todos:
-            if todo["id"] == id:
-                return todo
-    return todos
+@api.route("/")
+class Actions(CustomResource):
+    @api.doc("Get all todos")
+    def get(self):
+        try:
+            todos = get_todos()
+            return self.send(status=200, result=todos)
+        except:
+            traceback.print_exc()
+            return self.send(status=500)

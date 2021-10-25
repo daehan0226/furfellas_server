@@ -1,5 +1,6 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+
 from core.database import db
 
 
@@ -22,16 +23,13 @@ class TodoParent(db.Model):
         db.session.add(self)
         db.session.commit()
         return self
-    
+
     def create_todo_children(self):
         result = []
         datetime = self.start_datetime
-        if self.repeat_interval == '1m':
+        if self.repeat_interval == "1m":
             while datetime < self.finish_datetime:
-                result.append({
-                    "parent_id": self.id,
-                    "datetime": datetime
-                })
+                result.append({"parent_id": self.id, "datetime": datetime})
                 datetime += relativedelta(months=6)
         return result
 

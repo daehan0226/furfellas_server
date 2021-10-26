@@ -99,16 +99,16 @@ def test_delete_todo_with_wrong_identifier(client, tables):
     assert client.delete(f"/api/todos/asfwer").status_code == 404
 
 
-# def test_create_toto_with_todo_children(client, tables):
-#     now = datetime.now()
-#     mimetype = "application/json"
-#     headers = {"Content-Type": mimetype, "Accept": mimetype}
-#     data = {
-#         "task": "wake up",
-#         "repeat_interval": "1m",
-#         "start_datetime": now.isoformat(),
-#         "finish_datetime": (now + relativedelta(months=6)).isoformat(),
-#     }
-#     url = "/api/todos/"
+def test_create_toto_with_todo_children(client, tables):
+    now = datetime.now()
+    mimetype = "application/json"
+    headers = {"Content-Type": mimetype, "Accept": mimetype}
+    data = {
+        "task": "wake up",
+        "repeat_interval": "1m",
+        "start_datetime": now.isoformat(),
+        "finish_datetime": (now + relativedelta(months=6)).isoformat(),
+    }
+    url = "/api/todos/"
 
-#     client.post(url, data=json.dumps(data), headers=headers)
+    client.post(url, data=json.dumps(data), headers=headers)

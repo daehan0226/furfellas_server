@@ -40,7 +40,9 @@ class TodoParent(db.Model):
     def set_todo_children(self):
         result = []
         datetime = self.start_datetime
-        if self.repeat_interval == "1m":
+        if self.repeat_interval == "":
+            result.append({"parent_id": self.id, "datetime": datetime})
+        elif self.repeat_interval == "1m":
             while datetime < self.finish_datetime:
                 result.append({"parent_id": self.id, "datetime": datetime})
                 datetime += relativedelta(months=1)
@@ -71,6 +73,13 @@ class TodoChildren(db.Model):
         db.session.add(self)
         db.session.commit()
         return self
+
+    @staticmethod
+    def create_all(objects):
+        db.session.add_all(
+            [TodoChildren(obj["datetime"], obj["parent_id"]) for obj in objects]
+        )
+        db.session.commit()
 
     def __repr__(self):
         return f"{self.id} {self.datetime}"

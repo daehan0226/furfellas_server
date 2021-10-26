@@ -18,6 +18,9 @@ def create_todo_parent(arg):
     )
     todo_parent.create()
 
+    todo_children = todo_parent.set_todo_children()
+    TodoChildren.create_all(todo_children)
+
     return todo_parent.id
 
 

@@ -49,10 +49,10 @@ class TodoParent(db.Model):
     def __repr__(self):
         return f"{self.id} {self.task}"
 
-    def delete(self, id):
+    def delete(self, id: int):
         if id is not None:
             TodoParent.query.filter_by(id).delete()
-            db.session.commit()
+            return db.session.commit()
 
 
 class TodoChildren(db.Model):

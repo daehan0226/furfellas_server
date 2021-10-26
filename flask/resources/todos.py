@@ -1,3 +1,4 @@
+import re
 from core.models import TodoParent
 from datetime import datetime
 import traceback
@@ -17,7 +18,12 @@ def create_todo_parent(arg):
 
 
 def get_todo(id):
-    return TodoParent.query.filter_by(id=id).first().serialize
+    todo = TodoParent.query.filter_by(id=id).first()
+    return todo.serialize if todo else None
+
+
+def delete_todo(id):
+    return TodoParent.query.filter_by(id=id).delete()
 
 
 def get_todos():
@@ -33,8 +39,8 @@ parser_post.add_argument("finish_datetime", type=str, required=True)
 
 @api.route("/")
 class Todos(CustomResource):
-    @api.doc("Get all todos")
     def get(self):
+        """ "Get all todos"""
         try:
             todos = get_todos()
             return self.send(status=200, result=todos)
@@ -42,9 +48,9 @@ class Todos(CustomResource):
             traceback.print_exc()
             return self.send(status=500)
 
-    @api.doc("create a new todo")
     @api.expect(parser_post)
     def post(self):
+        """ "Create a new todo"""
         try:
             args = parser_post.parse_args()
             result = create_todo_parent(args)
@@ -62,7 +68,21 @@ class Todo(CustomResource):
     @api.doc("Get a todo")
     def get(self, id):
         try:
-            return self.send(status=200, result=get_todo(id))
+            todo = get_todo(id)
+            if todo:
+                return self.send(status=200, result=todo)
+            return self.send(status=404)
+        except:
+            traceback.print_exc()
+            return self.send(status=500)
+
+    @api.doc("Delete a todo")
+    def delete(self, id):
+        try:
+            if delete_todo(id):
+                return self.send(status=204)
+
+            return self.send(status=404)
         except:
             traceback.print_exc()
             return self.send(status=500)

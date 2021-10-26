@@ -1,6 +1,5 @@
 import re
-from core.models import TodoParent
-from datetime import datetime
+from core.models import TodoParent, TodoChildren
 import traceback
 from flask_restplus import Namespace, reqparse
 from core.resource import CustomResource
@@ -11,9 +10,14 @@ api = Namespace("todos", description="todos related operations")
 
 
 def create_todo_parent(arg):
-    now = datetime.now()
-    todo_parent = TodoParent("wake up", "1d", now, now)
+    todo_parent = TodoParent(
+        arg["task"],
+        arg.get("repeat_interval") or "",
+        arg["start_datetime"],
+        arg.get("finish_datetime") or arg["start_datetime"],
+    )
     todo_parent.create()
+
     return todo_parent.id
 
 
@@ -32,9 +36,9 @@ def get_todos():
 
 parser_post = reqparse.RequestParser()
 parser_post.add_argument("task", type=str, required=True)
-parser_post.add_argument("repeat_interval", type=str, required=True)
+parser_post.add_argument("repeat_interval", type=str)
 parser_post.add_argument("start_datetime", type=str, required=True)
-parser_post.add_argument("finish_datetime", type=str, required=True)
+parser_post.add_argument("finish_datetime", type=str)
 
 
 @api.route("/")

@@ -37,13 +37,13 @@ class TodoParent(db.Model):
             "created_datetime": self.created_datetime.isoformat(),
         }
 
-    def create_todo_children(self):
+    def set_todo_children(self):
         result = []
         datetime = self.start_datetime
         if self.repeat_interval == "1m":
             while datetime < self.finish_datetime:
                 result.append({"parent_id": self.id, "datetime": datetime})
-                datetime += relativedelta(months=6)
+                datetime += relativedelta(months=1)
         return result
 
     def __repr__(self):

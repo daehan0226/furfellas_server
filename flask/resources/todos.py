@@ -10,15 +10,18 @@ api = Namespace("todos", description="todos related operations")
 
 
 def create_todo_parent(arg):
-    print(arg)
     now = datetime.now()
     todo_parent = TodoParent("wake up", "1d", now, now)
     todo_parent.create()
-    return True
+    return todo_parent.id
+
+
+def get_todo(id):
+    return TodoParent.query.filter_by(id=id).first().serialize
 
 
 def get_todos():
-    return TodoParent.query.all()
+    return [todo_parent.serialize for todo_parent in TodoParent.query.all()]
 
 
 parser_post = reqparse.RequestParser()
@@ -29,7 +32,7 @@ parser_post.add_argument("finish_datetime", type=str, required=True)
 
 
 @api.route("/")
-class Actions(CustomResource):
+class Todos(CustomResource):
     @api.doc("Get all todos")
     def get(self):
         try:
@@ -47,8 +50,19 @@ class Actions(CustomResource):
             result = create_todo_parent(args)
             if result is None:
                 return self.send(status=500)
-            return self.send(status=201)
+            return self.send(status=201, result=result)
 
+        except:
+            traceback.print_exc()
+            return self.send(status=500)
+
+
+@api.route("/<int:id>")
+class Todo(CustomResource):
+    @api.doc("Get a todo")
+    def get(self, id):
+        try:
+            return self.send(status=200, result=get_todo(id))
         except:
             traceback.print_exc()
             return self.send(status=500)

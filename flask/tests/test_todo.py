@@ -8,7 +8,24 @@ def test_get_todos(client, tables):
     assert client.get("/api/todos/").status_code == 200
 
 
-def test_get_todos(client, tables):
+def test_get_todo_by_id(client, tables):
+    now = datetime.now()
+
+    mimetype = "application/json"
+    headers = {"Content-Type": mimetype, "Accept": mimetype}
+    data = {
+        "task": "wake up",
+        "repeat_interval": "1d",
+        "start_datetime": now.isoformat(),
+        "finish_datetime": (now + relativedelta(months=6)).isoformat(),
+    }
+    url = "/api/todos/"
+    response = client.post(url, data=json.dumps(data), headers=headers)
+    id = json.loads(response.data.decode("utf-8"))["result"]
+    assert client.get(f"/api/todos/{id}").status_code == 200
+
+
+def test_create_todos(client, tables):
     now = datetime.now()
 
     mimetype = "application/json"
@@ -24,3 +41,20 @@ def test_get_todos(client, tables):
     response = client.post(url, data=json.dumps(data), headers=headers)
 
     assert response.status_code == 201
+    assert isinstance(json.loads(response.data.decode("utf-8"))["result"], int)
+
+
+def test_create_todo_without_task(client, tables):
+    now = datetime.now()
+    mimetype = "application/json"
+    headers = {"Content-Type": mimetype, "Accept": mimetype}
+    data = {
+        "repeat_interval": "1d",
+        "start_datetime": now.isoformat(),
+        "finish_datetime": (now + relativedelta(months=6)).isoformat(),
+    }
+    url = "/api/todos/"
+
+    response = client.post(url, data=json.dumps(data), headers=headers)
+
+    assert response.status_code == 500

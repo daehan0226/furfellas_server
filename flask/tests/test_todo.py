@@ -4,11 +4,11 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
 
-def test_get_todos(client):
+def test_get_todos(client, tables):
     assert client.get("/api/todos/").status_code == 200
 
 
-def test_get_todos(client):
+def test_get_todos(client, tables):
     now = datetime.now()
 
     mimetype = "application/json"

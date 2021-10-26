@@ -2,7 +2,7 @@ from core.database import db
 
 
 class Action(db.Model):
-    __tablename__ = "test_action"
+    __tablename__ = "action"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200))
 

@@ -19,6 +19,9 @@ def client():
 
     with app.app_context():
         with app.test_client() as client:
+            app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+                "SQLALCHEMY_TEST_DATABASE_URI"
+            )
             yield client
 
 

@@ -1,95 +1,50 @@
-import re
-from core.models import TodoParent, TodoChildren
 import traceback
 from flask_restplus import Namespace, reqparse
-from core.resource import CustomResource
-from core import db
 
+from core.models import TodoChildren, TodoParent
+from core.resource import CustomResource
+from core.database import db
 
 api = Namespace("todos", description="todos related operations")
 
 
-def create_todo_parent(arg):
-    todo_parent = TodoParent(
-        arg["task"],
-        arg.get("repeat_interval") or "",
-        arg["start_datetime"],
-        arg.get("finish_datetime") or arg["start_datetime"],
-    )
-    todo_parent.create()
-
-    todo_children = todo_parent.set_todo_children()
-    TodoChildren.create_all(todo_children)
-
-    return todo_parent.id
-
-
-def get_todo(id):
-    todo = TodoParent.query.filter_by(id=id).first()
-    return todo.serialize if todo else None
-
-
-def delete_todo(id):
-    return TodoParent.query.filter_by(id=id).delete()
-
-
-def get_todos():
-    return [todo.serialize for todo in TodoParent.query.all()]
+def get_todos(parent_id=None):
+    if parent_id is not None:
+        todos = (
+            db.session.query(TodoChildren, TodoParent)
+            .join(TodoParent, TodoChildren.parent_id == TodoParent.id)
+            .filter(TodoParent.id == parent_id)
+            .all()
+        )
+    else:
+        todos = (
+            db.session.query(TodoChildren, TodoParent)
+            .join(TodoParent, TodoChildren.parent_id == TodoParent.id)
+            .all()
+        )
+    serialized_todos = []
+    for todo in todos:
+        serialized_todo = {}
+        child, parent = todo
+        serialized_todo.update(child.serialize)
+        serialized_todo.update(parent.serialize)
+        serialized_todos.append(serialized_todo)
+    return serialized_todos
 
 
-parser_post = reqparse.RequestParser()
-parser_post.add_argument("task", type=str, required=True)
-parser_post.add_argument("repeat_interval", type=str)
-parser_post.add_argument("start_datetime", type=str, required=True)
-parser_post.add_argument("finish_datetime", type=str)
+parser_parent_id = reqparse.RequestParser()
+parser_parent_id.add_argument("parent_id", type=int)
 
 
 @api.route("/")
 class Todos(CustomResource):
+    @api.expect(parser_parent_id)
     def get(self):
         """ "Get all todos"""
         try:
-            todos = get_todos()
+            args = parser_parent_id.parse_args()
+            todos = get_todos(parent_id=args["parent_id"])
             return self.send(status=200, result=todos)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
-
-    @api.expect(parser_post)
-    def post(self):
-        """ "Create a new todo"""
-        try:
-            args = parser_post.parse_args()
-            result = create_todo_parent(args)
-            if result is None:
-                return self.send(status=500)
-            return self.send(status=201, result=result)
-
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
-
-
-@api.route("/<int:id>")
-class Todo(CustomResource):
-    @api.doc("Get a todo")
-    def get(self, id):
-        try:
-            todo = get_todo(id)
-            if todo:
-                return self.send(status=200, result=todo)
-            return self.send(status=404)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
-
-    @api.doc("Delete a todo")
-    def delete(self, id):
-        try:
-            if delete_todo(id):
-                return self.send(status=204)
-
-            return self.send(status=404)
         except:
             traceback.print_exc()
             return self.send(status=500)

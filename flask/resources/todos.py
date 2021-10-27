@@ -34,7 +34,7 @@ def delete_todo(id):
 
 
 def get_todos():
-    return [todo_parent.serialize for todo_parent in TodoParent.query.all()]
+    return [todo.serialize for todo in TodoParent.query.all()]
 
 
 parser_post = reqparse.RequestParser()

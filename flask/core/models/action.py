@@ -1,7 +1,10 @@
 from core.database import db
 
 
-class Action(db.Model):
+from core.models.base import BaseModel
+
+
+class Action(BaseModel):
     __tablename__ = "action"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200))
@@ -9,13 +12,13 @@ class Action(db.Model):
     def __init__(self, name):
         self.name = name
 
+    def __repr__(self):
+        return self._repr(id=self.id, name=self.name)
+
     def create(self):
         db.session.add(self)
         db.session.commit()
         return self
-
-    def __repr__(self):
-        return f"{self.id} {self.name}"
 
     def delete(self, id=None, name=None):
         if id is not None:

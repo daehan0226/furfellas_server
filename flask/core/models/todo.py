@@ -2,9 +2,10 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 from core.database import db
+from core.models.base import BaseModel
 
 
-class TodoParent(db.Model):
+class TodoParent(BaseModel):
     __tablename__ = "todo_parent"
     id = db.Column(db.Integer, primary_key=True)
     task = db.Column(db.String(200))
@@ -37,7 +38,7 @@ class TodoParent(db.Model):
             "created_datetime": self.created_datetime.isoformat(),
         }
 
-    def set_todo_children(self):
+    def set_todo_children(self) -> list:
         result = []
         datetime = self.start_datetime
         if self.repeat_interval == "":
@@ -48,16 +49,13 @@ class TodoParent(db.Model):
                 datetime += relativedelta(months=1)
         return result
 
-    def __repr__(self):
-        return f"{self.id} {self.task}"
-
     def delete(self, id: int):
         if id is not None:
             TodoParent.query.filter_by(id).delete()
             return db.session.commit()
 
 
-class TodoChildren(db.Model):
+class TodoChildren(BaseModel):
     __tablename__ = "todo_children"
     id = db.Column(db.Integer, primary_key=True)
     datetime = db.Column(db.DateTime)
@@ -80,9 +78,6 @@ class TodoChildren(db.Model):
             [TodoChildren(obj["datetime"], obj["parent_id"]) for obj in objects]
         )
         db.session.commit()
-
-    def __repr__(self):
-        return f"{self.id} {self.datetime}"
 
     def delete(self, id):
         if id is not None:

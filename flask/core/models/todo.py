@@ -1,4 +1,5 @@
 from datetime import datetime
+from operator import invert
 from dateutil.relativedelta import relativedelta
 
 from core.database import db
@@ -38,15 +39,29 @@ class TodoParent(BaseModel):
             "created_datetime": self.created_datetime.isoformat(),
         }
 
+    def _set_interval_kwargs(self):
+        interval = int(self.repeat_interval[:-1])
+        interval_type = self.repeat_interval[-1]
+
+        kwargs = {}
+        if interval_type == "m":
+            kwargs["months"] = interval
+        elif interval_type == "d":
+            kwargs["days"] = interval
+        elif interval_type == "y":
+            kwargs["years"] = interval
+
+        return kwargs
+
     def set_todo_children(self) -> list:
-        result = []
         datetime = self.start_datetime
         if self.repeat_interval == "":
+            return [{"parent_id": self.id, "datetime": datetime}]
+
+        result = []
+        while datetime < self.finish_datetime:
             result.append({"parent_id": self.id, "datetime": datetime})
-        elif self.repeat_interval == "1m":
-            while datetime < self.finish_datetime:
-                result.append({"parent_id": self.id, "datetime": datetime})
-                datetime += relativedelta(months=1)
+            datetime += relativedelta(**self._set_interval_kwargs())
         return result
 
     def delete(self, id: int):

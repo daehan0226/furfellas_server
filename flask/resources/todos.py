@@ -11,23 +11,19 @@ api = Namespace("todos", description="todos related operations")
 def get_todos(parent_id=None):
     if parent_id is not None:
         todos = (
-            db.session.query(TodoChildren, TodoParent)
-            .join(TodoParent, TodoChildren.parent_id == TodoParent.id)
+            db.session.query(TodoParent, TodoChildren)
+            .join(TodoChildren)
             .filter(TodoParent.id == parent_id)
             .all()
         )
     else:
-        todos = (
-            db.session.query(TodoChildren, TodoParent)
-            .join(TodoParent, TodoChildren.parent_id == TodoParent.id)
-            .all()
-        )
+        todos = db.session.query(TodoParent, TodoChildren).join(TodoChildren).all()
     serialized_todos = []
     for todo in todos:
         serialized_todo = {}
-        child, parent = todo
-        serialized_todo.update(child.serialize)
+        parent, child = todo
         serialized_todo.update(parent.serialize)
+        serialized_todo.update(child.serialize)
         serialized_todos.append(serialized_todo)
     return serialized_todos
 

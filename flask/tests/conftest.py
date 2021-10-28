@@ -32,3 +32,12 @@ def db_engine():
     yield engine_
 
     engine_.dispose()
+
+
+class ApiCallHelpers:
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+
+
+@pytest.fixture
+def api_helpers():
+    return ApiCallHelpers

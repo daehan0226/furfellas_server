@@ -8,11 +8,8 @@ def test_get_todos(client):
     assert client.get("/api/todos/").status_code == 200
 
 
-def test_get_todos_of_parent(client):
+def test_get_todos_of_parent(client, api_helpers):
     now = datetime.now()
-
-    mimetype = "application/json"
-    headers = {"Content-Type": mimetype, "Accept": mimetype}
     data = {
         "task": "wake up",
         "repeat_interval": "2m",
@@ -20,7 +17,7 @@ def test_get_todos_of_parent(client):
         "finish_datetime": (now + relativedelta(months=11)).isoformat(" ", "seconds"),
     }
     url = "/api/todo-groups/"
-    response = client.post(url, data=json.dumps(data), headers=headers)
+    response = client.post(url, data=json.dumps(data), headers=api_helpers.headers)
     parent_id = json.loads(response.data.decode("utf-8"))["result"]
 
     assert client.get(f"/api/todos/?parent_id={parent_id}").status_code == 200

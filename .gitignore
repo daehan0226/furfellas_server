@@ -1,6 +1,7 @@
 flask/venv/*
 flask/logs/*
 flask/__pychche__/*
+flask/.db
 *.json
 *.pyc
 .env

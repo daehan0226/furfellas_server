@@ -1,5 +1,7 @@
 import traceback
+from datetime import datetime
 from flask_restplus import Namespace, reqparse
+
 
 from core.models import TodoParent, TodoChildren
 from core.resource import CustomResource
@@ -8,12 +10,23 @@ from core.resource import CustomResource
 api = Namespace("todo-groups", description="todo groups related operations")
 
 
+def convert_to_datetime(datetime_, format="%Y-%m-%d %H:%M:%S"):
+    return datetime.strptime(datetime_, format)
+
+
 def create_todo_group(arg):
+    start_datetime = convert_to_datetime(arg["start_datetime"])
+    finish_datetime = (
+        convert_to_datetime(arg["finish_datetime"])
+        if arg.get("finish_datetime")
+        else start_datetime
+    )
+
     todo_parent = TodoParent(
         arg["task"],
         arg.get("repeat_interval") or "",
-        arg["start_datetime"],
-        arg.get("finish_datetime") or arg["start_datetime"],
+        start_datetime,
+        finish_datetime,
     )
     todo_parent.create()
 

@@ -8,6 +8,7 @@ from core.database import db
 
 class BaseModel(db.Model):
     __abstract__ = True
+    protected_columns = []
 
     def __repr__(self):
         return self._repr(id=self.id)
@@ -29,6 +30,11 @@ class BaseModel(db.Model):
             return f"<{self.__class__.__name__}({','.join(field_strings)})>"
         return f"<{self.__class__.__name__} {id(self)}>"
 
+    def create(self):
+        db.session.add(self)
+        db.session.commit()
+        return self
+
     @property
     def serialize(self):
         """Return object data in easily serializable format"""
@@ -36,6 +42,8 @@ class BaseModel(db.Model):
 
         for key, value in vars(self).items():
             if isinstance(value, sqlalchemy.orm.state.InstanceState):
+                continue
+            if key in self.protected_columns:
                 continue
             if isinstance(value, datetime):
                 value = value.isoformat()

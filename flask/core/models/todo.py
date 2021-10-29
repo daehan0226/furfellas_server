@@ -1,5 +1,4 @@
 from datetime import datetime
-from operator import invert
 from dateutil.relativedelta import relativedelta
 
 from core.database import db
@@ -21,11 +20,6 @@ class TodoParent(BaseModel):
         self.repeat_interval = repeat_interval
         self.start_datetime = start_datetime
         self.finish_datetime = finish_datetime
-
-    def create(self):
-        db.session.add(self)
-        db.session.commit()
-        return self
 
     def _set_interval_kwargs(self):
         interval = int(self.repeat_interval[:-1])

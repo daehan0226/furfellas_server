@@ -80,19 +80,8 @@ def init_db():
 
 
 def insert_defaults():
-    _create_default_users()
     if not get_locations(name="Not sure"):
         insert_location("Not sure")
-
-
-def _create_default_users():
-
-    if not get_user(name="admin"):
-        ADMIN_NAME = os.getenv("ADMIN_NAME")
-        ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
-        ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
-        print("Created admin user")
-        insert_user(ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD, 0)
 
 
 def insert_user(user_name, email, password, user_type):

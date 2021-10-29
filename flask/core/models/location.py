@@ -14,11 +14,6 @@ class Location(BaseModel):
     def __repr__(self):
         return self._repr(id=self.id, name=self.name)
 
-    def create(self):
-        db.session.add(self)
-        db.session.commit()
-        return self
-
     def delete(self, id=None, name=None):
         if id is not None:
             Location.query.filter_by(id=id).delete()

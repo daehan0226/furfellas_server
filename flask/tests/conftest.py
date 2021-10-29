@@ -25,6 +25,9 @@ def client():
         with app.app_context():
             db.create_all()
             yield client
+            db.session.rollback()
+            db.session.close()
+            db.drop_all()
 
 
 @pytest.fixture()

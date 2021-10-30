@@ -4,12 +4,6 @@ CREATE TABLE IF NOT EXISTS `action` (
     `name`                  VARCHAR(200) NOT NULL,
     PRIMARY KEY(`id`)
 );
-CREATE TABLE IF NOT EXISTS `location` (
-    `id`                    INT(11) NOT NULL AUTO_INCREMENT,
-    `api_search_key`        VARCHAR(1000),
-    `name`                  VARCHAR(200) NOT NULL UNIQUE,
-    PRIMARY KEY(`id`)
-);
 CREATE TABLE IF NOT EXISTS `photo` (
     `id`                    INT(11) NOT NULL AUTO_INCREMENT,
     `type`                  INT(3),

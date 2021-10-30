@@ -5,6 +5,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 
 from core.database import db
+from resources.sessions import expire_old_session_job
 from resources import blueprint as api
 from core.google_drive_api import init_google_service
 from core.db import init_db  ## TODO: delete and replace it to database(sqlalchemy) db
@@ -14,6 +15,9 @@ APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
 dotenv_path = os.path.join(APP_ROOT, ".env")
 load_dotenv(dotenv_path)
 
+
+def run_schedulers():
+    expire_old_session_job()
 
 def init_settings():
     try:

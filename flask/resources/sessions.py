@@ -1,4 +1,7 @@
+from datetime import datetime
+import time
 import traceback
+from threading import Thread
 from flask_restplus import Namespace, reqparse
 
 from core.resource import CustomResource
@@ -6,6 +9,24 @@ from core.models import User as UserModel
 from core.models import Session as SessionModel
 
 api = Namespace("sessions", description="Sessions related operations")
+
+
+
+def expire_old_session_job():
+    thread = Thread(target=expire_old_session)
+    thread.daemon = True
+    thread.start()
+
+
+def expire_old_session():
+    SESSION_VALID_TIME = 20
+    SESSION_CHECK_TIME = 10
+    while True:
+        sessions = SessionModel.query().all()
+        for session in sessions:
+            if session.created_datetime - datetime.now() > SESSION_VALID_TIME:
+                session.delete()
+        time.sleep(SESSION_CHECK_TIME)
 
 
 def get_user_if_verified(username, password):
@@ -57,10 +78,9 @@ class SessionVlidation(CustomResource):
         """Check if session is valid"""
         try:
             args = parser_header.parse_args()
-            global sessions
             try:
-                user_id = sessions[args.get("Authorization")]
-                return self.send(status=200, result=user_id)
+                session = SessionModel.query.filter_by(token=args["Authorization"]).first()
+                return self.send(status=200, result=session.id)
             except:
                 return self.send(status=403)
         except:

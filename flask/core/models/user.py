@@ -11,6 +11,8 @@ class User(BaseModel):
     email = db.Column(db.String(120), unique=True)
     password = db.Column(db.String(100), nullable=False)
     created_datetime = db.Column(db.DateTime, default=datetime.now())
+    
+    session = db.relationship("Session", cascade="all, delete-orphan")
 
     protected_columns = ["password"]
 

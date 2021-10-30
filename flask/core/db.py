@@ -76,12 +76,6 @@ def init_db():
                 except:
                     traceback.print_exc()
         conn.commit()
-    insert_defaults()
-
-
-def insert_defaults():
-    if not get_locations(name="Not sure"):
-        insert_location("Not sure")
 
 
 def insert_user(user_name, email, password, user_type):
@@ -379,85 +373,6 @@ def delete_action(id_=None, name=None):
                     WHERE 
                         name='{name}'
                 """
-            cur.execute(sql)
-            conn.commit()
-        return True
-    except:
-        traceback.print_exc()
-        return None
-
-
-def insert_location(name, key=None):
-    try:
-        with get_db() as conn:
-            cur = conn.cursor()
-            if key:
-                sql = "INSERT into location(key, name) values (%s, %s)"
-                cur.execute(sql, (key, name.lower()))
-            else:
-                sql = "INSERT into location(name) values (%s)"
-                cur.execute(sql, (name.lower()))
-            conn.commit()
-
-        return True
-    except:
-        traceback.print_exc()
-        return False
-
-
-def get_locations(name=None):
-    try:
-        with get_db() as conn:
-            cur = conn.cursor()
-            sql = """
-                SELECT
-                    *
-                FROM location
-            """
-            if name is not None:
-                sql += f"""
-                    WHERE 
-                        name='{name}'
-                """
-            cur.execute(sql)
-            conn.commit()
-            res = cur.fetchall()
-        return res
-    except:
-        traceback.print_exc()
-        return None
-
-
-def update_location(id_, name):
-    try:
-        with get_db() as conn:
-            cur = conn.cursor()
-            sql = f"""
-                UPDATE 
-                    location
-                SET
-                    name='{name.lower()}'
-                WHERE
-                    id={id_}
-            """
-            cur.execute(sql)
-            conn.commit()
-        return True
-    except:
-        traceback.print_exc()
-        return None
-
-
-def delete_location(id_):
-    try:
-        with get_db() as conn:
-            cur = conn.cursor()
-            sql = f"""
-                DELETE FROM 
-                    location
-                WHERE 
-                    id={id_}
-            """
             cur.execute(sql)
             conn.commit()
         return True

@@ -82,7 +82,7 @@ class Actions(CustomResource):
             result = creat_action(args["name"])
             if result is None:
                 return self.send(status=500)
-            return self.send(status=201, result=result)
+            return self.send(status=201, result=result.id)
 
         except:
             traceback.print_exc()

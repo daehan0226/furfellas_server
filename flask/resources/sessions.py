@@ -1,15 +1,21 @@
-from datetime import datetime
+import os
 import time
 import traceback
+from datetime import datetime
 from threading import Thread
+
+from dateutil.relativedelta import relativedelta
 from flask_restplus import Namespace, reqparse
 
 from core.resource import CustomResource
 from core.models import User as UserModel
 from core.models import Session as SessionModel
+from core.database import get_db_session
 
 api = Namespace("sessions", description="Sessions related operations")
 
+SESSION_CHECK_TIME_SECONDS = int(os.getenv("SESSION_CHECK_TIME_HOURS")) * 3600
+SESSION_VALID_TIME_SECONDS = int(os.getenv("SESSION_VALID_TIME_HOURS")) * 3600
 
 
 def expire_old_session_job():
@@ -19,14 +25,23 @@ def expire_old_session_job():
 
 
 def expire_old_session():
-    SESSION_VALID_TIME = 20
-    SESSION_CHECK_TIME = 10
     while True:
-        time.sleep(SESSION_CHECK_TIME)
-        sessions = SessionModel.query().all()
-        for session in sessions:
-            if session.created_datetime - datetime.now() > SESSION_VALID_TIME:
-                session.delete()
+        try:
+            db_scoped_session = get_db_session()
+            db_session = db_scoped_session()
+            sessions = db_session.query(SessionModel).all()
+            for session in sessions:
+                expire_datetime = session.created_datetime + relativedelta(
+                    seconds=SESSION_VALID_TIME_SECONDS
+                )
+                if expire_datetime < datetime.now():
+                    db_session.query(SessionModel).filter_by(id=session.id).delete()
+                    db_session.commit()
+            time.sleep(SESSION_CHECK_TIME_SECONDS)
+            db_scoped_session.remove()
+        except:
+            traceback.print_exc()
+            break
 
 
 def get_user_if_verified(username, password):
@@ -79,9 +94,11 @@ class SessionVlidation(CustomResource):
         try:
             args = parser_header.parse_args()
             try:
-                session = SessionModel.query.filter_by(token=args["Authorization"]).first()
+                session = SessionModel.query.filter_by(
+                    token=args["Authorization"]
+                ).first()
                 if session:
-                    return self.send(status=200, result=session.id)
+                    return self.send(status=200, result=session.user_id)
                 else:
                     self.send(status=403)
             except:

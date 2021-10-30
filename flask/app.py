@@ -16,9 +16,9 @@ dotenv_path = os.path.join(APP_ROOT, ".env")
 load_dotenv(dotenv_path)
 
 
-def run_schedulers():
-    pass
-    # expire_old_session_job()
+def db_schedulers():
+    expire_old_session_job()
+
 
 def init_settings():
     try:
@@ -41,6 +41,7 @@ def set_db(app):
 
         db.create_all()
         db.session.commit()
+        db_schedulers()
 
 
 def create_app():

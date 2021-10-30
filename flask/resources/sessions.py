@@ -22,11 +22,11 @@ def expire_old_session():
     SESSION_VALID_TIME = 20
     SESSION_CHECK_TIME = 10
     while True:
+        time.sleep(SESSION_CHECK_TIME)
         sessions = SessionModel.query().all()
         for session in sessions:
             if session.created_datetime - datetime.now() > SESSION_VALID_TIME:
                 session.delete()
-        time.sleep(SESSION_CHECK_TIME)
 
 
 def get_user_if_verified(username, password):
@@ -80,9 +80,12 @@ class SessionVlidation(CustomResource):
             args = parser_header.parse_args()
             try:
                 session = SessionModel.query.filter_by(token=args["Authorization"]).first()
-                return self.send(status=200, result=session.id)
+                if session:
+                    return self.send(status=200, result=session.id)
+                else:
+                    self.send(status=403)
             except:
-                return self.send(status=403)
+                return self.send(status=400)
         except:
             traceback.print_exc()
             return self.send(status=500)

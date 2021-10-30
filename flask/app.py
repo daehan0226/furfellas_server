@@ -17,7 +17,8 @@ load_dotenv(dotenv_path)
 
 
 def run_schedulers():
-    expire_old_session_job()
+    pass
+    # expire_old_session_job()
 
 def init_settings():
     try:

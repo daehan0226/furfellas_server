@@ -1,78 +1,108 @@
-import string
-import random
+import os
+import time
 import traceback
+from datetime import datetime
+from threading import Thread
+
+from dateutil.relativedelta import relativedelta
 from flask_restplus import Namespace, reqparse
 
-from core.db import redis_store, get_user
-from .users import get_user_if_verified
-from core.utils import token_required, random_string_digits
 from core.resource import CustomResource
+from core.models import User as UserModel
+from core.models import Session as SessionModel
+from core.database import get_db_session
 
-api = Namespace('sessions', description='Sessions related operations')
+api = Namespace("sessions", description="Sessions related operations")
+
+SESSION_CHECK_TIME_SECONDS = int(os.getenv("SESSION_CHECK_TIME_HOURS")) * 3600
+SESSION_VALID_TIME_SECONDS = int(os.getenv("SESSION_VALID_TIME_HOURS")) * 3600
+
+
+def expire_old_session_job():
+    thread = Thread(target=expire_old_session)
+    thread.daemon = True
+    thread.start()
+
+
+def expire_old_session():
+    while True:
+        try:
+            db_scoped_session = get_db_session()
+            db_session = db_scoped_session()
+            sessions = db_session.query(SessionModel).all()
+            for session in sessions:
+                expire_datetime = session.created_datetime + relativedelta(
+                    seconds=SESSION_VALID_TIME_SECONDS
+                )
+                if expire_datetime < datetime.now():
+                    db_session.query(SessionModel).filter_by(id=session.id).delete()
+                    db_session.commit()
+            time.sleep(SESSION_CHECK_TIME_SECONDS)
+            db_scoped_session.remove()
+        except:
+            traceback.print_exc()
+            break
+
+
+def get_user_if_verified(username, password):
+    user = UserModel.query.filter_by(username=username).first()
+    if user:
+        if user.check_password(password):
+            return user
+
+
+def delete_session(id):
+    return SessionModel.query.filter_by(user_id=id).delete()
 
 
 parser_create = reqparse.RequestParser()
-parser_create.add_argument('username', type=str, required=True, help='Unique username')
-parser_create.add_argument('password', type=str, required=True, help='Password')
+parser_create.add_argument("username", type=str, required=True, help="Unique username")
+parser_create.add_argument("password", type=str, required=True, help="Password")
 
 parser_header = reqparse.RequestParser()
-parser_header.add_argument('Authorization', type=str, required=True, location='headers')
+parser_header.add_argument("Authorization", type=str, required=True, location="headers")
 
-@api.route('/')
-@api.response(401, 'Session not found')
-class Session(CustomResource):  
-    @api.doc('create_session')
+
+@api.route("/")
+@api.response(401, "Session not found")
+class Session(CustomResource):
+    @api.doc("create_session")
     @api.expect(parser_create)
     def post(self):
-        '''Create a session after verifying user info '''
+        """Create a session after verifying user info"""
         try:
             args = parser_create.parse_args()
             user = get_user_if_verified(args["username"], args["password"])
             if user:
-                session_id = random_string_digits(30)
-                redis_store.set(name=session_id, value=user["id"], ex=60*60*24)
-                user_data = get_user(id_=user["id"])
-                is_admin = 1 if user_data["user_type"] == 0 else 0
-                result = {
-                    "session": session_id,
-                    "name": user_data["name"],
-                    "is_admin": is_admin
-                }
-                return self.send(status=201, result=result)
+                delete_session(user.id)
+                session = SessionModel(user_id=user.id)
+                session.create()
+                return self.send(status=201, result=session.token)
             else:
                 return self.send(status=400, message="Check your id and password.")
         except:
             traceback.print_exc()
             return self.send(status=500)
 
-    @api.doc('delete_session')
+
+@api.route("/validate")
+class SessionVlidation(CustomResource):
+    @api.doc("get_session")
     @api.expect(parser_header)
-    def delete(self):
-        '''User logout'''
+    def get(self):
+        """Check if session is valid"""
         try:
             args = parser_header.parse_args()
-            redis_store.delete(args["Authorization"])
-            return self.send(status=200)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
-
-@api.route('/validate')
-@api.response(401, 'Session is not valid')
-class SessionVlidation(CustomResource):
-    @api.doc('get_session')
-    @api.expect(parser_header)
-    @token_required
-    def get(self, **kwargs):
-        '''Check if session is valid'''
-        try:
-            user={}
-            status = 401
-            if kwargs["user_info"] is not None:
-                status = 200
-                user["name"] = kwargs["user_info"]["name"]
-                user["is_admin"] = 1 if kwargs["user_info"]["user_type"] == 0 else 0
-            return self.send(status=status, result=user)
+            try:
+                session = SessionModel.query.filter_by(
+                    token=args["Authorization"]
+                ).first()
+                if session:
+                    return self.send(status=200, result=session.user_id)
+                else:
+                    self.send(status=403)
+            except:
+                return self.send(status=400)
         except:
             traceback.print_exc()
             return self.send(status=500)

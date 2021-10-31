@@ -35,6 +35,10 @@ class BaseModel(db.Model):
         db.session.commit()
         return self
 
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
     @property
     def serialize(self):
         """Return object data in easily serializable format"""

@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import traceback
 from datetime import datetime
@@ -10,12 +11,25 @@ from flask_restplus import Namespace, reqparse
 from core.resource import CustomResource
 from core.models import User as UserModel
 from core.models import Session as SessionModel
-from core.database import get_db_session
+from core.database import get_db_session, db
+from core.constants import response_status
 
 api = Namespace("sessions", description="Sessions related operations")
 
 SESSION_CHECK_TIME_SECONDS = int(os.getenv("SESSION_CHECK_TIME_HOURS")) * 3600
 SESSION_VALID_TIME_SECONDS = int(os.getenv("SESSION_VALID_TIME_HOURS")) * 3600
+
+
+def create_session(user_id):
+    return SessionModel(user_id=user_id).create()
+
+
+def get_session(user_id=None, token=None):
+    if user_id is not None:
+        session = SessionModel.query.filter_by(user_id=user_id).first()
+    elif token is not None:
+        session = SessionModel.query.filter_by(token=token).first()
+    return session.serialize if session else None
 
 
 def expire_old_session_job():
@@ -49,10 +63,15 @@ def get_user_if_verified(username, password):
     if user:
         if user.check_password(password):
             return user
+    return None
 
 
-def delete_session(id):
-    return SessionModel.query.filter_by(user_id=id).delete()
+def delete_session(id_=None, token=None):
+    if id_ is not None:
+        SessionModel.query.filter_by(user_id=id_).delete()
+    elif token is not None:
+        SessionModel.query.filter_by(token=token).delete()
+    db.session.commit()
 
 
 parser_create = reqparse.RequestParser()
@@ -74,35 +93,46 @@ class Session(CustomResource):
             args = parser_create.parse_args()
             user = get_user_if_verified(args["username"], args["password"])
             if user:
-                delete_session(user.id)
-                session = SessionModel(user_id=user.id)
-                session.create()
-                return self.send(status=201, result=session.token)
+                delete_session(id_=user.id)
+                session = create_session(user.id)
+                return self.send(status=response_status.CREATED, result=session.token)
             else:
-                return self.send(status=400, message="Check your id and password.")
+                return self.send(
+                    status=response_status.FAIL, message="Check your id and password."
+                )
         except:
             traceback.print_exc()
-            return self.send(status=500)
+            return self.send(status=response_status.SEVER_ERROR)
 
 
 @api.route("/validate")
 class SessionVlidation(CustomResource):
-    @api.doc("get_session")
     @api.expect(parser_header)
     def get(self):
         """Check if session is valid"""
         try:
             args = parser_header.parse_args()
-            try:
-                session = SessionModel.query.filter_by(
-                    token=args["Authorization"]
-                ).first()
-                if session:
-                    return self.send(status=200, result=session.user_id)
-                else:
-                    self.send(status=403)
-            except:
-                return self.send(status=400)
+            session = get_session(token=args["Authorization"])
+            if session:
+                return self.send(
+                    status=response_status.SUCCESS, result=session["user_id"]
+                )
+            else:
+                return self.send(status=response_status.FAIL)
         except:
             traceback.print_exc()
-            return self.send(status=500)
+            return self.send(status=response_status.SEVER_ERROR)
+
+    @api.expect(parser_header)
+    def delete(self):
+        try:
+            args = parser_header.parse_args()
+            token = args["Authorization"]
+            if get_session(token=token):
+                delete_session(token=token)
+                return self.send(status=response_status.NO_CONTENT)
+            else:
+                return self.send(status=response_status.NOT_FOUND)
+        except:
+            traceback.print_exc()
+            return self.send(status=response_status.SEVER_ERROR)

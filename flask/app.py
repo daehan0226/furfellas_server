@@ -8,7 +8,6 @@ from core.database import db
 from resources.sessions import expire_old_session_job
 from resources import blueprint as api
 from core.google_drive_api import init_google_service
-from core.db import init_db  ## TODO: delete and replace it to database(sqlalchemy) db
 
 
 APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
@@ -23,7 +22,6 @@ def db_schedulers():
 def init_settings():
     try:
         init_google_service()
-        init_db()
     except:
         traceback.print_exc()
 

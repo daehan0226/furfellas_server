@@ -1,5 +1,6 @@
 import traceback
 from flask_restplus import Namespace, reqparse
+
 from core.resource import CustomResource
 from core.models import PhotoType as PhotoTypeModel
 from core.database import db
@@ -43,10 +44,7 @@ def get_photo_types():
 class PhotoTypes(CustomResource):
     def get(self):
         try:
-            locations = get_photo_types()
-            if locations is None:
-                return self.send(status=500)
-            return self.send(status=200, result=locations)
+            return self.send(status=200, result=get_photo_types())
         except:
             traceback.print_exc()
             return self.send(status=500)
@@ -59,7 +57,6 @@ class PhotoTypes(CustomResource):
             if result is None:
                 return self.send(status=500)
             return self.send(status=201)
-
         except:
             traceback.print_exc()
             return self.send(status=500)
@@ -73,9 +70,7 @@ class PhotoType(CustomResource):
         try:
             args = parser_post.parse_args()
             result = update_photo_type(id_, args["name"])
-            if result:
-                return self.send(status=204)
-            return self.send(status=400)
+            return self.send(status=204) if result else self.send(status=400)
         except:
             traceback.print_exc()
             return self.send(status=500)

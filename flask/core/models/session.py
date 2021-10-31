@@ -23,7 +23,3 @@ class Session(BaseModel):
     def gen_token(self):
         self.token = random_string_digits(30)
         return self.token
-
-    def delete(self):
-        Session.query.filter_by(id=self.id).delete()
-        db.session.commit()

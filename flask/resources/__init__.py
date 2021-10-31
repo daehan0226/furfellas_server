@@ -1,6 +1,5 @@
 from flask import Blueprint
 from flask_restplus import Api
-from .logs import api as logs
 from .photos import api as photos
 from .actions import api as actions
 from .locations import api as locations
@@ -13,7 +12,6 @@ from .photo_types import api as photo_types
 blueprint = Blueprint("api", __name__)
 api = Api(blueprint, title="Fur fellas API", version="1.0", description="")
 
-api.add_namespace(logs)
 api.add_namespace(photos)
 api.add_namespace(photo_types)
 api.add_namespace(actions)

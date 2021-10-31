@@ -1,16 +1,11 @@
 import traceback
 from flask_restplus import Namespace, reqparse
-from core.resource import CustomResource
 
+from core.resource import CustomResource
 from core.models import Action as ActionModel
 from core.database import db
 
 api = Namespace("actions", description="actions related operations")
-
-
-parser_action_name = reqparse.RequestParser()
-parser_action_name.add_argument("name", type=str, help="action name")
-
 
 parser_post = reqparse.RequestParser()
 parser_post.add_argument("name", type=str, required=True, help="action name")
@@ -83,20 +78,6 @@ class Actions(CustomResource):
             if result is None:
                 return self.send(status=500)
             return self.send(status=201, result=result.id)
-
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
-
-    @api.doc("create a new action")
-    @api.expect(parser_action_name)
-    def delete(self):
-        try:
-            args = parser_action_name.parse_args()
-            result = delete_action(name=args["name"])
-            if result is None:
-                return self.send(status=500)
-            return self.send(status=204)
 
         except:
             traceback.print_exc()

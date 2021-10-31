@@ -51,6 +51,19 @@ class TodoParent(BaseModel):
             TodoParent.query.filter_by(id).delete()
             return db.session.commit()
 
+    @property
+    def serialize(self):
+        """Return object data in easily serializable format"""
+
+        return {
+            "id": self.id,
+            "task": self.task,
+            "repeat_interval": self.repeat_interval,
+            "start_datetime": self.start_datetime.isoformat(),
+            "finish_datetime": self.finish_datetime.isoformat(),
+            "created_datetime": self.created_datetime.isoformat(),
+        }
+
 
 class TodoChildren(BaseModel):
     __tablename__ = "todo_children"
@@ -80,3 +93,17 @@ class TodoChildren(BaseModel):
         if id is not None:
             TodoChildren.query.filter_by(id).delete()
             db.session.commit()
+
+    @property
+    def serialize(self):
+        """Return object data in easily serializable format"""
+        from core.models import TodoParent
+
+        todo_parent = TodoParent.query.get(self.parent_id)
+
+        return {
+            "id": self.id,
+            "parent_id": self.parent_id,
+            "datetime": self.datetime.isoformat(),
+            "task": todo_parent.task,
+        }

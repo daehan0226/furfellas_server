@@ -8,12 +8,14 @@ from .todos import api as todos
 from .todo_groups import api as todo_groups
 from .users import api as users
 from .sessions import api as sessions
+from .photo_types import api as photo_types
 
 blueprint = Blueprint("api", __name__)
 api = Api(blueprint, title="Fur fellas API", version="1.0", description="")
 
 api.add_namespace(logs)
 api.add_namespace(photos)
+api.add_namespace(photo_types)
 api.add_namespace(actions)
 api.add_namespace(locations)
 api.add_namespace(todos)

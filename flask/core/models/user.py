@@ -5,13 +5,13 @@ from core.models.base import BaseModel
 
 
 class User(BaseModel):
-    __table_name__ = "user"
+    __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True)
     password = db.Column(db.String(100), nullable=False)
     created_datetime = db.Column(db.DateTime, default=datetime.now())
-    
+
     session = db.relationship("Session", cascade="all, delete-orphan")
 
     protected_columns = ["password"]

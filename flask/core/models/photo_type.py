@@ -1,14 +1,11 @@
 from core.database import db
-from sqlalchemy.orm import relationship
 from core.models import BaseModel
 
 
-class Action(BaseModel):
-    __tablename__ = "action"
+class PhotoType(BaseModel):
+    __tablename__ = "photo_type"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), unique=True, nullable=False)
-
-    photos = relationship("Photo", secondary="photo_action")
 
     def __init__(self, name):
         self.name = name
@@ -16,6 +13,9 @@ class Action(BaseModel):
     def __repr__(self):
         return self._repr(id=self.id, name=self.name)
 
-    def delete(self, id):
-        Action.query.filter_by(id=id).delete()
+    def delete(self, id=None, name=None):
+        if id is not None:
+            PhotoType.query.filter_by(id=id).delete()
+        elif name is not None:
+            PhotoType.query.filter_by(name=name).delete()
         db.session.commit()

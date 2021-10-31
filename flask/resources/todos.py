@@ -1,7 +1,7 @@
 import traceback
 from flask_restplus import Namespace, reqparse
 
-from core.models import TodoChildren, TodoParent
+from core.models import TodoChildren
 from core.resource import CustomResource
 from core.database import db
 
@@ -9,23 +9,11 @@ api = Namespace("todos", description="todos related operations")
 
 
 def get_todos(parent_id=None):
+    query = db.session.query(TodoChildren)
     if parent_id is not None:
-        todos = (
-            db.session.query(TodoParent, TodoChildren)
-            .join(TodoChildren)
-            .filter(TodoParent.id == parent_id)
-            .all()
-        )
-    else:
-        todos = db.session.query(TodoParent, TodoChildren).join(TodoChildren).all()
-    serialized_todos = []
-    for todo in todos:
-        serialized_todo = {}
-        parent, child = todo
-        serialized_todo.update(parent.serialize)
-        serialized_todo.update(child.serialize)
-        serialized_todos.append(serialized_todo)
-    return serialized_todos
+        query = query.filter(TodoChildren.parent_id == parent_id)
+    todos = query.all()
+    return [todo.serialize for todo in todos]
 
 
 parser_parent_id = reqparse.RequestParser()

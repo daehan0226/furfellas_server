@@ -8,7 +8,6 @@ from core.database import db
 from resources.sessions import expire_old_session_job
 from resources import blueprint as api
 from core.google_drive_api import init_google_service
-from core.db import init_db  ## TODO: delete and replace it to database(sqlalchemy) db
 
 
 APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
@@ -23,7 +22,6 @@ def db_schedulers():
 def init_settings():
     try:
         init_google_service()
-        init_db()
     except:
         traceback.print_exc()
 
@@ -37,6 +35,8 @@ def set_db(app):
             TodoChildren,
             User,
             Session,
+            Photo,
+            PhotoAction,
         )
 
         db.create_all()
@@ -47,7 +47,7 @@ def set_db(app):
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "ssseetrr"
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_TEST_DATABASE_URI")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     CORS(app, resources={r"/api/*": {"origins": "*"}})

@@ -46,8 +46,8 @@ def update_action(id_, name):
     db.session.commit()
 
 
-def delete_action(id):
-    ActionModel.query.filter_by(id=id).delete()
+def delete_action(id_):
+    ActionModel.query.filter_by(id=id_).delete()
 
 
 @api.route("/")

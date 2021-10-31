@@ -21,7 +21,7 @@ class TodoParent(BaseModel):
         self.start_datetime = start_datetime
         self.finish_datetime = finish_datetime
 
-    def _set_interval_kwargs(self):
+    def _set_intervals(self):
         interval = int(self.repeat_interval[:-1])
         interval_type = self.repeat_interval[-1]
 
@@ -43,7 +43,7 @@ class TodoParent(BaseModel):
         result = []
         while datetime < self.finish_datetime:
             result.append({"parent_id": self.id, "datetime": datetime})
-            datetime += relativedelta(**self._set_interval_kwargs())
+            datetime += relativedelta(**self._set_intervals())
         return result
 
     def delete(self, id: int):

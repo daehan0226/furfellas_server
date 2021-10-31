@@ -6,3 +6,4 @@ from .user import User
 from .session import Session
 from .photo import Photo
 from .photo_action import PhotoAction
+from .photo_type import PhotoType

@@ -138,7 +138,9 @@ parser_search.add_argument("size", type=str, help="Photo count", location="args"
 
 parser_create = reqparse.RequestParser()
 parser_create.add_argument("file", type=FileStorage, location="files", required=True)
-parser_create.add_argument("type", type=int, location="form", help="Alone or together")
+parser_create.add_argument(
+    "type_id", type=int, location="form", help="Alone or together"
+)
 parser_create.add_argument(
     "action_ids", type=str, location="form", help="action ids or new actions"
 )
@@ -149,7 +151,7 @@ parser_create.add_argument(
     "description", type=str, help="photo description", location="form"
 )
 parser_create.add_argument(
-    "date", type=str, help="date of photo taken", location="form"
+    "create_datetime", type=str, help="date of photo taken", location="form"
 )
 
 
@@ -174,9 +176,11 @@ class Photos(CustomResource):
         """Upload a photo to Onedrive"""
         try:
             args = parser_create.parse_args()
-            image_id = upload_photo(args["file"])
+            # image_id = upload_photo(args["file"])
+            image_id = "asdfwerw"
             if image_id:
                 args["image_id"] = image_id
+                args["create_datetime"] = datetime.now()
                 result, message = save_photo(args)
                 if result:
                     return self.send(status=201, result=result.id)

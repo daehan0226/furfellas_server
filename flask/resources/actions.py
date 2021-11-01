@@ -23,11 +23,10 @@ def creat_action(name):
         action.create()
         return action, ""
     except sqlalchemy.exc.IntegrityError as e:
-        print(e)
         return False, f"Action name '{name}' already exsits."
 
 
-def get_actions(name=None):
+def get_actions(name=None) -> list:
     if name is not None:
         actions = ActionModel.query.filter(ActionModel.name.like(f"%{name}%"))
     else:
@@ -35,7 +34,7 @@ def get_actions(name=None):
     return [action.serialize for action in actions]
 
 
-def get_action(id_):
+def get_action(id_) -> dict:
     action = ActionModel.query.get(id_)
     return action.serialize if action else None
 
@@ -96,9 +95,8 @@ class Action(CustomResource):
     @api.expect(parser_post)
     def put(self, id_):
         try:
-            args = parser_post.parse_args()
-            action = get_action(id_)
-            if action:
+            if get_action(id_):
+                args = parser_post.parse_args()
                 update_action(id_, args["name"])
                 return self.send(status=response_status.NO_CONTENT)
             return self.send(status=response_status.NOT_FOUND)
@@ -109,8 +107,7 @@ class Action(CustomResource):
     @api.doc("delete an action")
     def delete(self, id_):
         try:
-            action = get_action(id_)
-            if action:
+            if get_action(id_):
                 delete_action(id_)
                 return self.send(status=response_status.NO_CONTENT)
             return self.send(status=response_status.NOT_FOUND)

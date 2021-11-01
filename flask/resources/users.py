@@ -138,7 +138,7 @@ class User(CustomResource):
             return self.send(status=response_status.NOT_FOUND)
         except:
             traceback.print_exc()
-            return self.send(status=500)
+            return self.send(status=response_status.SEVER_ERROR)
 
     @api.expect(parser_create)
     def put(self, id_):

@@ -45,7 +45,7 @@ def test_delete_session(client, api_helpers):
     session_validate_url = "/api/sessions/validate"
     headers = {"Authorization": session, **api_helpers.headers}
 
-    response_delete = client.delete(session_validate_url, headers=headers)
+    response_delete = client.delete(session_url, headers=headers)
     response_validate = client.get(session_validate_url, headers=headers)
 
     assert response_delete.status_code == 204

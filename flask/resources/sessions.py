@@ -85,7 +85,6 @@ parser_header.add_argument("Authorization", type=str, required=True, location="h
 @api.route("/")
 @api.response(401, "Session not found")
 class Session(CustomResource):
-    @api.doc("create_session")
     @api.expect(parser_create)
     def post(self):
         """Create a session after verifying user info"""
@@ -100,6 +99,20 @@ class Session(CustomResource):
                 return self.send(
                     status=response_status.FAIL, message="Check your id and password."
                 )
+        except:
+            traceback.print_exc()
+            return self.send(status=response_status.SEVER_ERROR)
+
+    @api.expect(parser_header)
+    def delete(self):
+        try:
+            args = parser_header.parse_args()
+            token = args["Authorization"]
+            if get_session(token=token):
+                delete_session(token=token)
+                return self.send(status=response_status.NO_CONTENT)
+            else:
+                return self.send(status=response_status.NOT_FOUND)
         except:
             traceback.print_exc()
             return self.send(status=response_status.SEVER_ERROR)
@@ -119,20 +132,6 @@ class SessionVlidation(CustomResource):
                 )
             else:
                 return self.send(status=response_status.FAIL)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
-
-    @api.expect(parser_header)
-    def delete(self):
-        try:
-            args = parser_header.parse_args()
-            token = args["Authorization"]
-            if get_session(token=token):
-                delete_session(token=token)
-                return self.send(status=response_status.NO_CONTENT)
-            else:
-                return self.send(status=response_status.NOT_FOUND)
         except:
             traceback.print_exc()
             return self.send(status=response_status.SEVER_ERROR)

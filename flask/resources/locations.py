@@ -22,7 +22,6 @@ def create_location(name):
         location.create()
         return location, ""
     except sqlalchemy.exc.IntegrityError as e:
-        print(e)
         return False, f"Location name '{name}' already exsits."
 
 
@@ -46,7 +45,7 @@ def update_location(id_, name):
 
 
 def delete_location(id_):
-    return LocationModel.query.filter_by(id=id_).delete()
+    LocationModel.query.filter_by(id=id_).delete()
 
 
 @api.route("/")
@@ -94,9 +93,8 @@ class Location(CustomResource):
     @api.expect(parser_post)
     def put(self, id_):
         try:
-            args = parser_post.parse_args()
-            location = update_location(id_)
-            if location:
+            if update_location(id_):
+                args = parser_post.parse_args()
                 update_location(id_, args["name"])
                 return self.send(status=response_status.NO_CONTENT)
             return self.send(status=response_status.NOT_FOUND)
@@ -107,8 +105,7 @@ class Location(CustomResource):
     @api.doc("delete a location")
     def delete(self, id_):
         try:
-            location = get_location(id_)
-            if location:
+            if get_location(id_):
                 delete_location(id_)
                 return self.send(status=response_status.NO_CONTENT)
             return self.send(status=response_status.NOT_FOUND)

@@ -12,10 +12,3 @@ class PhotoType(BaseModel):
 
     def __repr__(self):
         return self._repr(id=self.id, name=self.name)
-
-    def delete(self, id=None, name=None):
-        if id is not None:
-            PhotoType.query.filter_by(id=id).delete()
-        elif name is not None:
-            PhotoType.query.filter_by(name=name).delete()
-        db.session.commit()

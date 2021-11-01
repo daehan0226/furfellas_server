@@ -46,11 +46,6 @@ class TodoParent(BaseModel):
             datetime += relativedelta(**self._set_intervals())
         return result
 
-    def delete(self, id: int):
-        if id is not None:
-            TodoParent.query.filter_by(id).delete()
-            return db.session.commit()
-
     @property
     def serialize(self):
         """Return object data in easily serializable format"""
@@ -88,11 +83,6 @@ class TodoChildren(BaseModel):
             [TodoChildren(obj["datetime"], obj["parent_id"]) for obj in objects]
         )
         db.session.commit()
-
-    def delete(self, id):
-        if id is not None:
-            TodoChildren.query.filter_by(id).delete()
-            db.session.commit()
 
     @property
     def serialize(self):

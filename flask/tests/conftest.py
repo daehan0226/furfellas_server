@@ -1,7 +1,6 @@
 import os
 import pytest
 import json
-from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import create_engine
 from dotenv import load_dotenv

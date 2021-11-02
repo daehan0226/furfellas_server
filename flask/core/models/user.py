@@ -1,3 +1,5 @@
+import os
+from sqlalchemy import event
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from core.database import db
@@ -33,3 +35,22 @@ class User(BaseModel):
 
     def check_password(self, password):
         return check_password_hash(self.password, password)
+
+
+@event.listens_for(User.__table__, "after_create")
+def insert_initial_values(*args, **kwargs):
+    db.session.add(
+        User(
+            os.getenv("ADMIN_USER_NAME"),
+            os.getenv("ADMIN_USER_EMAIL"),
+            os.getenv("ADMIN_USER_PASSWORD"),
+        )
+    )
+    db.session.add(
+        User(
+            os.getenv("TEST_USER_NAME"),
+            os.getenv("TEST_USER_EMAIL"),
+            os.getenv("TEST_USER_PASSWORD"),
+        )
+    )
+    db.session.commit()

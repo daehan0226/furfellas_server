@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+import werkzeug
 
 
 def test_get_todo_groups(client):
@@ -58,7 +59,6 @@ def test_create_todo_without_task(client, api_helpers, datetime_handler):
     url = "/api/todo-groups/"
 
     response = client.post(url, data=json.dumps(data), headers=api_helpers.headers)
-
     assert response.status_code == 500
 
 

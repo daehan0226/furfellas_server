@@ -93,7 +93,7 @@ class Location(CustomResource):
     @api.expect(parser_post)
     def put(self, id_):
         try:
-            if update_location(id_):
+            if get_location(id_):
                 args = parser_post.parse_args()
                 update_location(id_, args["name"])
                 return self.send(status=response_status.NO_CONTENT)

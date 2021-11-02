@@ -12,15 +12,17 @@ class User(BaseModel):
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True)
     password = db.Column(db.String(100), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey("user_role.id", ondelete="SET NULL"))
     created_datetime = db.Column(db.DateTime, default=datetime.now())
 
     session = db.relationship("Session", cascade="all, delete-orphan")
 
     protected_columns = ["password"]
 
-    def __init__(self, username, email, password, **kwargs):
+    def __init__(self, username, email, password, role_id, **kwargs):
         self.username = username
         self.email = email
+        self.role_id = role_id
         self.set_password(password)
 
     def __repr__(self):
@@ -39,18 +41,19 @@ class User(BaseModel):
 
 @event.listens_for(User.__table__, "after_create")
 def insert_initial_values(*args, **kwargs):
-    db.session.add(
+    initial_users = [
         User(
             os.getenv("ADMIN_USER_NAME"),
             os.getenv("ADMIN_USER_EMAIL"),
             os.getenv("ADMIN_USER_PASSWORD"),
-        )
-    )
-    db.session.add(
+            os.getenv("ADMIN_ROLE_ID"),
+        ),
         User(
-            os.getenv("TEST_USER_NAME"),
-            os.getenv("TEST_USER_EMAIL"),
-            os.getenv("TEST_USER_PASSWORD"),
-        )
-    )
+            os.getenv("MANAGER_USER_NAME"),
+            os.getenv("MANAGER_USER_EMAIL"),
+            os.getenv("MANAGER_USER_PASSWORD"),
+            os.getenv("MANAGER_ROLE_ID"),
+        ),
+    ]
+    db.session.add_all(initial_users)
     db.session.commit()

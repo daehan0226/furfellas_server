@@ -28,16 +28,7 @@ def init_settings():
 
 def set_db(app):
     with app.app_context():
-        from core.models import (
-            Action,
-            Location,
-            TodoParent,
-            TodoChildren,
-            User,
-            Session,
-            Photo,
-            PhotoAction,
-        )
+        from core import models
 
         db.create_all()
         db.session.commit()

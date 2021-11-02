@@ -4,7 +4,7 @@ from flask_restplus import Namespace, reqparse
 
 from core.resource import CustomResource
 from core.utils import token_required
-from core.models import User as UserModel
+from core.models import User as UserModel, UserRole as UserRoleModel
 from core.database import db
 from core.constants import response_status
 
@@ -12,7 +12,10 @@ api = Namespace("users", description="Users related operations")
 
 
 def create_user(args) -> dict:
-    user = UserModel(args["username"], args.get("email"), args["password"])
+    general_user_role = UserRoleModel.query.filter_by(name="general").first()
+    user = UserModel(
+        args["username"], args.get("email"), args["password"], general_user_role.id
+    )
     user.create()
     return user
 

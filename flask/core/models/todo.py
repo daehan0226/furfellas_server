@@ -21,6 +21,14 @@ class TodoParent(BaseModel):
         self.start_datetime = start_datetime
         self.finish_datetime = finish_datetime
 
+    def __repr__(self):
+        return self._repr(
+            id=self.id,
+            name=self.task,
+            start_datetime=self.start_datetime,
+            finish_datetime=self.finish_datetime,
+        )
+
     def _set_intervals(self):
         interval = int(self.repeat_interval[:-1])
         interval_type = self.repeat_interval[-1]
@@ -72,10 +80,12 @@ class TodoChildren(BaseModel):
         self.datetime = datetime
         self.parent_id = str(parent_id)
 
-    def create(self):
-        db.session.add(self)
-        db.session.commit()
-        return self
+    def __repr__(self):
+        return self._repr(
+            id=self.id,
+            datetime=self.datetime,
+            parent_id=self.parent_id,
+        )
 
     @staticmethod
     def create_all(objects):

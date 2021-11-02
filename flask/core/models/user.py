@@ -22,7 +22,11 @@ class User(BaseModel):
         self.set_password(password)
 
     def __repr__(self):
-        return f"<User('{self.id}', '{self.username}', '{self.email}')>"
+        return self._repr(
+            id=self.id,
+            username=self.username,
+            email=self.email,
+        )
 
     def set_password(self, password):
         self.password = generate_password_hash(password)

@@ -1,9 +1,10 @@
+from logging import exception
 import traceback
 import sqlalchemy
 from flask_restplus import Namespace, reqparse
 
 from core.resource import CustomResource
-from core.utils import token_required
+from core.utils import token_required, return_500_for_sever_error
 from core.models import User as UserModel, UserRole as UserRoleModel
 from core.database import db
 from core.constants import response_status
@@ -92,39 +93,31 @@ parser_search.add_argument("email", type=str)
 class Users(CustomResource):
     @api.expect(parser_search, parser_header)
     @token_required
+    @return_500_for_sever_error
     def get(self, **kwargs):
         """Get all users"""
-        try:
-            if kwargs["auth_user"]:
-                if kwargs["auth_user"].is_admin():
-                    args = parser_search.parse_args()
-                    return self.send(
-                        status=response_status.SUCCESS, result=get_users(args)
-                    )
-                return self.send(status=response_status.FORBIDDEN)
-            return self.send(status=response_status.NO_AUTH)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+        if kwargs["auth_user"]:
+            if kwargs["auth_user"].is_admin():
+                args = parser_search.parse_args()
+                return self.send(status=response_status.SUCCESS, result=get_users(args))
+            return self.send(status=response_status.FORBIDDEN)
+        return self.send(status=response_status.NO_AUTH)
 
     @api.doc("create a new user")
     @api.expect(parser_create)
+    @return_500_for_sever_error
     def post(self):
         """Create an user"""
-        try:
-            args = parser_create.parse_args()
-            duplicate_keys = check_user_info_duplicates(args)
-            if duplicate_keys:
-                return self.send(
-                    status=response_status.FAIL,
-                    message=f"The given {duplicate_keys.join(', ')} exist(s).",
-                )
+        args = parser_create.parse_args()
+        duplicate_keys = check_user_info_duplicates(args)
+        if duplicate_keys:
+            return self.send(
+                status=response_status.FAIL,
+                message=f"The given {duplicate_keys.join(', ')} exist(s).",
+            )
 
-            result = create_user(args)
-            return self.send(status=response_status.CREATED, result=result.id)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+        result = create_user(args)
+        return self.send(status=response_status.CREATED, result=result.id)
 
 
 @api.route("/<int:id_>")
@@ -132,47 +125,38 @@ class User(CustomResource):
     @api.doc("Get a user")
     @api.expect(parser_header)
     @token_required
+    @return_500_for_sever_error
     def get(self, id_, **kwargs):
-        try:
-            if kwargs["auth_user"]:
-                if user := get_user_by_id(id_):
-                    if kwargs["auth_user"].is_admin() or kwargs["auth_user"].id == id_:
-                        return self.send(status=response_status.SUCCESS, result=user)
-                return self.send(status=response_status.NOT_FOUND)
-            return self.send(status=response_status.NO_AUTH)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+        if kwargs["auth_user"]:
+            if user := get_user_by_id(id_):
+                if kwargs["auth_user"].is_admin() or kwargs["auth_user"].id == id_:
+                    return self.send(status=response_status.SUCCESS, result=user)
+            return self.send(status=response_status.NOT_FOUND)
+        return self.send(status=response_status.NO_AUTH)
 
     @api.expect(parser_header)
     @token_required
+    @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        try:
-            if kwargs["auth_user"]:
-                if get_user_by_id(id_):
-                    if kwargs["auth_user"].is_admin():
-                        delete_user(id_)
-                        return self.send(status=response_status.NO_CONTENT)
-                    return self.send(status=response_status.FORBIDDEN)
-                return self.send(status=response_status.NOT_FOUND)
-            return self.send(status=response_status.NO_AUTH)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+        if kwargs["auth_user"]:
+            if get_user_by_id(id_):
+                if kwargs["auth_user"].is_admin():
+                    delete_user(id_)
+                    return self.send(status=response_status.NO_CONTENT)
+                return self.send(status=response_status.FORBIDDEN)
+            return self.send(status=response_status.NOT_FOUND)
+        return self.send(status=response_status.NO_AUTH)
 
     @api.expect(parser_create, parser_header)
     @token_required
+    @return_500_for_sever_error
     def put(self, id_, **kwargs):
-        try:
-            if kwargs["auth_user"]:
-                if get_user_by_id(id_):
-                    if kwargs["auth_user"].is_admin():
-                        args = parser_create.parse_args()
-                        update_user(UserModel.query.get(id_), args)
-                        return self.send(status=response_status.NO_CONTENT)
-                    return self.send(status=response_status.FORBIDDEN)
-                return self.send(status=response_status.NOT_FOUND)
-            return self.send(status=response_status.NO_AUTH)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+        if kwargs["auth_user"]:
+            if get_user_by_id(id_):
+                if kwargs["auth_user"].is_admin():
+                    args = parser_create.parse_args()
+                    update_user(UserModel.query.get(id_), args)
+                    return self.send(status=response_status.NO_CONTENT)
+                return self.send(status=response_status.FORBIDDEN)
+            return self.send(status=response_status.NOT_FOUND)
+        return self.send(status=response_status.NO_AUTH)

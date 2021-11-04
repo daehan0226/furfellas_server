@@ -1,28 +1,22 @@
-import os
 import string
 import random
 
-from flask import request
-from flask_restplus import abort
-from dotenv import load_dotenv
-
-
-APP_ROOT = os.path.join(os.path.dirname(__file__), "..")  # refers to application_top
-dotenv_path = os.path.join(APP_ROOT, ".env")
-load_dotenv(dotenv_path)
+from flask import request, current_app
 
 
 def token_required(f):
     def wrapper(*args, **kwargs):
-        auth_header = request.headers.get("Authorization")
-        user_info = None
-        if auth_header:
-            from .db import redis_store, get_user
+        user = None
+        from core.models import User as UserModel
 
-            user_id = redis_store.get(auth_header)
-            if user_id:
-                user_info = get_user(user_id)
-        return f(*args, **kwargs, user_info=user_info)
+        if current_app.config["TESTING"]:
+            return f(*args, **kwargs, auth_user=UserModel.query.get(1))
+        if auth_header := request.headers.get("Authorization"):
+            from resources.sessions import get_session
+
+            if session := get_session(token=auth_header):
+                user = UserModel.query.get(session["user_id"])
+        return f(*args, **kwargs, auth_user=user)
 
     wrapper.__doc__ = f.__doc__
     wrapper.__name__ = f.__name__
@@ -30,7 +24,7 @@ def token_required(f):
 
 
 def random_string(length):
-    return "".join(random.choice(string.ascii_letters) for m in range(length))
+    return "".join(random.choice(string.ascii_letters) for _ in range(length))
 
 
 def random_string_digits(length):

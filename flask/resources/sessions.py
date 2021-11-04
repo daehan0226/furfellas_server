@@ -4,6 +4,7 @@ import time
 import traceback
 from datetime import datetime
 from threading import Thread
+from dotenv import load_dotenv
 
 from dateutil.relativedelta import relativedelta
 from flask_restplus import Namespace, reqparse
@@ -15,6 +16,12 @@ from core.database import get_db_session, db
 from core.constants import response_status
 
 api = Namespace("sessions", description="Sessions related operations")
+
+
+APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
+dotenv_path = os.path.join(APP_ROOT, ".env")
+load_dotenv(dotenv_path)
+
 
 SESSION_CHECK_TIME_SECONDS = int(os.getenv("SESSION_CHECK_TIME_HOURS")) * 3600
 SESSION_VALID_TIME_SECONDS = int(os.getenv("SESSION_VALID_TIME_HOURS")) * 3600

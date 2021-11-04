@@ -81,7 +81,7 @@ parser_delete = reqparse.RequestParser()
 parser_delete.add_argument("ids", type=str, required=True, action="split")
 
 parser_header = reqparse.RequestParser()
-parser_header.add_argument("Authorization", type=str, required=True, location="headers")
+parser_header.add_argument("Authorization", type=str, location="headers")
 
 parser_search = reqparse.RequestParser()
 parser_search.add_argument("username", type=str, help="Unique user name")
@@ -90,12 +90,19 @@ parser_search.add_argument("email", type=str)
 
 @api.route("/")
 class Users(CustomResource):
-    @api.expect(parser_search)
-    def get(self):
+    @api.expect(parser_search, parser_header)
+    @token_required
+    def get(self, **kwargs):
         """Get all users"""
         try:
-            args = parser_search.parse_args()
-            return self.send(status=response_status.SUCCESS, result=get_users(args))
+            if kwargs["auth_user"]:
+                if kwargs["auth_user"].is_admin():
+                    args = parser_search.parse_args()
+                    return self.send(
+                        status=response_status.SUCCESS, result=get_users(args)
+                    )
+                return self.send(status=response_status.FORBIDDEN)
+            return self.send(status=response_status.NO_AUTH)
         except:
             traceback.print_exc()
             return self.send(status=response_status.SEVER_ERROR)
@@ -123,36 +130,49 @@ class Users(CustomResource):
 @api.route("/<int:id_>")
 class User(CustomResource):
     @api.doc("Get a user")
-    def get(self, id_):
+    @api.expect(parser_header)
+    @token_required
+    def get(self, id_, **kwargs):
         try:
-            user = get_user_by_id(id_)
-            if user:
-                return self.send(status=response_status.SUCCESS, result=user)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
-
-    def delete(self, id_):
-        try:
-            if get_user_by_id(id_):
-                delete_user(id_)
-                return self.send(status=response_status.NO_CONTENT)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
-
-    @api.expect(parser_create)
-    def put(self, id_):
-        try:
-            user = get_user_by_id(id_)
-            if user:
-                args = parser_create.parse_args()
-                update_user(user, args)
-                return self.send(status=response_status.NO_CONTENT, result=user.id)
-            else:
+            if kwargs["auth_user"]:
+                if user := get_user_by_id(id_):
+                    if kwargs["auth_user"].is_admin() or kwargs["auth_user"].id == id_:
+                        return self.send(status=response_status.SUCCESS, result=user)
                 return self.send(status=response_status.NOT_FOUND)
+            return self.send(status=response_status.NO_AUTH)
+        except:
+            traceback.print_exc()
+            return self.send(status=response_status.SEVER_ERROR)
+
+    @api.expect(parser_header)
+    @token_required
+    def delete(self, id_, **kwargs):
+        try:
+            if kwargs["auth_user"]:
+                if get_user_by_id(id_):
+                    if kwargs["auth_user"].is_admin():
+                        delete_user(id_)
+                        return self.send(status=response_status.NO_CONTENT)
+                    return self.send(status=response_status.FORBIDDEN)
+                return self.send(status=response_status.NOT_FOUND)
+            return self.send(status=response_status.NO_AUTH)
+        except:
+            traceback.print_exc()
+            return self.send(status=response_status.SEVER_ERROR)
+
+    @api.expect(parser_create, parser_header)
+    @token_required
+    def put(self, id_, **kwargs):
+        try:
+            if kwargs["auth_user"]:
+                if get_user_by_id(id_):
+                    if kwargs["auth_user"].is_admin():
+                        args = parser_create.parse_args()
+                        update_user(UserModel.query.get(id_), args)
+                        return self.send(status=response_status.NO_CONTENT)
+                    return self.send(status=response_status.FORBIDDEN)
+                return self.send(status=response_status.NOT_FOUND)
+            return self.send(status=response_status.NO_AUTH)
         except:
             traceback.print_exc()
             return self.send(status=response_status.SEVER_ERROR)

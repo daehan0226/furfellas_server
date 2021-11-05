@@ -150,9 +150,9 @@ class Photos(Resource, CustomeResponse):
         return self.send(response_type="SUCCESS", result=get_photos(args))
 
     @api.doc("post a photo")
+    @api.expect(parser_create, parser_auth)
     @return_404_for_no_auth
     @return_500_for_sever_error
-    @api.expect(parser_create, parser_auth)
     def post(self, **kwargs):
         """Upload a photo to Onedrive"""
         if kwargs["auth_user"].is_admin():

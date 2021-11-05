@@ -3,14 +3,18 @@ import werkzeug
 import os
 import sqlalchemy
 from datetime import datetime
-from flask_restplus import Namespace, reqparse
+from flask_restplus import Namespace, reqparse, Resource
 from werkzeug.datastructures import FileStorage
 from apiclient.http import MediaFileUpload
 
 from core.database import db
 from core.models import Photo as PhotoModel, Action as ActionModel
 from core.google_drive_api import get_service, get_folder_id
-from core.resource import CustomResource
+from core.response import (
+    CustomeResponse,
+    return_500_for_sever_error,
+    return_404_for_no_auth,
+)
 
 
 api = Namespace("photos", description="Photos related operations")
@@ -46,10 +50,8 @@ def save_photo(photo_columns):
         ]
         return photo.create(), ""
     except sqlalchemy.exc.IntegrityError as e:
-        print(e)
         return False, "Wrong location id"
     except sqlalchemy.orm.exc.FlushError as e:
-        print(e)
         return False, "Wrong action id"
     except:
         traceback.print_exc()
@@ -89,7 +91,7 @@ def get_photo(id):
 
 
 def delete_photo(id):
-    return PhotoModel.query.filter_by(id=id).delete()
+    PhotoModel.query.filter_by(id=id).delete()
 
 
 parser_search = reqparse.RequestParser()
@@ -133,63 +135,56 @@ parser_create.add_argument(
 )
 
 
+parser_auth = reqparse.RequestParser()
+parser_auth.add_argument("Authorization", type=str, location="headers")
+
+
 @api.route("/")
-class Photos(CustomResource):
+class Photos(Resource, CustomeResponse):
     @api.doc("list_photos")
     @api.expect(parser_search)
+    @return_500_for_sever_error
     def get(self):
         """List all photos"""
-        try:
-            args = parser_search.parse_args()
-            photos = get_photos(args)
-            return self.send(status=200, result=photos)
-
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+        args = parser_search.parse_args()
+        return self.send(response_type="SUCCESS", result=get_photos(args))
 
     @api.doc("post a photo")
-    @api.expect(parser_create)
-    def post(self):
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    @api.expect(parser_create, parser_auth)
+    def post(self, **kwargs):
         """Upload a photo to Onedrive"""
-        try:
+        if kwargs["auth_user"].is_admin():
             args = parser_create.parse_args()
-            image_id = upload_photo(args["file"])
-            if image_id:
+            if image_id := upload_photo(args["file"]):
                 args["image_id"] = image_id
                 args["create_datetime"] = datetime.now()
                 result, message = save_photo(args)
                 if result:
-                    return self.send(status=201, result=result.id)
-                else:
-                    return self.send(status=400, message=message)
-            return self.send(status=400)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+                    return self.send(response_type="CREATED", result=result.id)
+                return self.send(response_type="FAIL", additional_message=message)
+        return self.send(response_type="FORBIDDEN")
 
 
 @api.route("/<id_>")
 @api.response(404, "photo not found")
-class Photo(CustomResource):
+class Photo(Resource, CustomeResponse):
     @api.doc("get_photo")
+    @return_500_for_sever_error
     def get(self, id_):
-        try:
-            photo = get_photo(id_)
-            if photo:
-                return self.send(status=200, result=photo)
-            return self.send(status=404)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+        if photo := get_photo(id_):
+            return self.send(response_type="SUCCESS", result=photo)
+        return self.send(response_type="NOT_FOUND")
 
     @api.doc("delete a photo")
-    def delete(self, id_):
-        try:
-            result = delete_photo(id_)
-            if result is None:
-                return self.send(status=500)
-            return self.send(status=200)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+    @api.expect(parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def delete(self, id_, **kwargs):
+        if get_photo(id_):
+            if kwargs["auth_user"].is_admin():
+                delete_photo(id_)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")

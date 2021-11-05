@@ -1,10 +1,13 @@
 import sqlalchemy
-from flask_restplus import Namespace, reqparse
+from flask_restplus import Namespace, reqparse, Resource
 
-from core.resource import CustomResource
+from core.response import (
+    CustomeResponse,
+    return_500_for_sever_error,
+    return_404_for_no_auth,
+)
 from core.models import Action as ActionModel
 from core.database import db
-from core.response import return_500_for_sever_error, return_404_for_no_auth
 
 api = Namespace("actions", description="actions related operations")
 
@@ -53,7 +56,7 @@ parser_auth.add_argument("Authorization", type=str, location="headers")
 
 
 @api.route("/")
-class Actions(CustomResource):
+class Actions(Resource, CustomeResponse):
     @api.doc("Get all actions")
     @api.expect(parser_search)
     @return_500_for_sever_error
@@ -66,16 +69,18 @@ class Actions(CustomResource):
     @return_404_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
-        args = parser_post.parse_args()
-        result, message = creat_action(args["name"])
-        if result:
-            return self.send(response_type="CREATED", result=result.id)
-        return self.send(response_type="FAIL", message=message)
+        if kwargs["auth_user"].is_admin():
+            args = parser_post.parse_args()
+            result, message = creat_action(args["name"])
+            if result:
+                return self.send(response_type="CREATED", result=result.id)
+            return self.send(response_type="FAIL", additional_message=message)
+        return self.send(response_type="FORBIDDEN")
 
 
 @api.route("/<int:id_>")
 @api.param("id_", "The action identifier")
-class Action(CustomResource):
+class Action(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
         if action := get_action(id_):

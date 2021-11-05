@@ -3,10 +3,7 @@ import json
 
 from flask import Response, current_app, request
 
-from core.constants.response import (
-    status as response_status,
-    message as response_message,
-)
+from core.constants import response
 
 
 def return_404_for_no_auth(f):
@@ -48,6 +45,12 @@ def return_500_for_sever_error(f):
 
 
 class CustomeResponse:
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Credentials": "True",
+    }
+
     def send(
         self,
         result=None,
@@ -56,14 +59,8 @@ class CustomeResponse:
         additional_message=None,
     ):
 
-        headers = {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Allow-Credentials": "True",
-        }
-
-        status = response_status[response_type]
-        message = response_message[lang][response_type]
+        status = response.status[response_type]
+        message = response.message[lang][response_type]
 
         if additional_message is not None:
             message += f"({additional_message})"
@@ -74,7 +71,7 @@ class CustomeResponse:
         return Response(
             json_encode(response_body),
             status=status,
-            headers=headers,
+            headers=self.headers,
             mimetype="application/json",
         )
 

@@ -1,11 +1,11 @@
 import traceback
 import sqlalchemy
-from flask_restplus import Namespace, reqparse
+from flask_restplus import Namespace, reqparse, Resource
 
-from core.constants import response_status
-from core.resource import CustomResource
+from core.response import CustomeResponse
 from core.models import PhotoType as PhotoTypeModel
 from core.database import db
+from core.response import return_500_for_sever_error, return_404_for_no_auth
 
 api = Namespace("photo-types", description="photo types related operations")
 
@@ -41,60 +41,57 @@ def get_photo_types():
     return [photo_type.serialize for photo_type in PhotoTypeModel.query.all()]
 
 
-@api.route("/")
-class PhotoTypes(CustomResource):
-    def get(self):
-        try:
-            return self.send(status=response_status.SUCCESS, result=get_photo_types())
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+parser_auth = reqparse.RequestParser()
+parser_auth.add_argument("Authorization", type=str, location="headers")
 
-    @api.expect(parser_name)
-    def post(self):
-        try:
+
+@api.route("/")
+class PhotoTypes(Resource, CustomeResponse):
+    @return_500_for_sever_error
+    def get(self):
+        return self.send(response_type="SUCCESS", result=get_photo_types())
+
+    @api.expect(parser_name, parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def post(self, **kwargs):
+        if kwargs["auth_user"].is_admin():
             args = parser_name.parse_args()
             result, message = create_photo_type(args["name"])
             if result:
-                return self.send(status=response_status.CREATED, result=result.id)
-            return self.send(status=response_status.FAIL, message=message)
-
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+                return self.send(response_type="CREATED", result=result.id)
+            return self.send(response_type="FAIL", additional_message=message)
+        return self.send(response_type="FORBIDDEN")
 
 
 @api.route("/<int:id_>")
 @api.param("id_", "The photo type identifier")
-class PhotoType(CustomResource):
+class PhotoType(Resource, CustomeResponse):
+    @return_500_for_sever_error
     def get(self, id_):
-        try:
-            photo_type = get_photo_type(id_)
-            if photo_type:
-                return self.send(status=response_status.SUCCESS, result=photo_type)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+        if photo_type := get_photo_type(id_):
+            return self.send(response_type="SUCCESS", result=photo_type)
+        return self.send(response_type="NOT_FOUND")
 
-    @api.expect(parser_name)
-    def put(self, id_):
-        try:
-            if get_photo_type(id_):
+    @api.expect(parser_name, parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def put(self, id_, **kwargs):
+        if get_photo_type(id_):
+            if kwargs["auth_user"].is_admin():
                 args = parser_name.parse_args()
                 update_photo_type(id_, args["name"])
-                return self.send(status=response_status.NO_CONTENT)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")
 
-    def delete(self, id_):
-        try:
+    @api.expect(parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def delete(self, id_, **kwargs):
+        if kwargs["auth_user"].is_admin():
             if get_photo_type(id_):
                 delete_photo_type(id_)
-                return self.send(status=response_status.NO_CONTENT)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")

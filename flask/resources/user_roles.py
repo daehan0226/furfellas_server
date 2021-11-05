@@ -1,10 +1,13 @@
 import traceback
 import sqlalchemy
-from flask_restplus import Namespace, reqparse
-from core.resource import CustomResource
+from flask_restplus import Namespace, reqparse, Resource
+from core.response import (
+    CustomeResponse,
+    return_500_for_sever_error,
+    return_404_for_no_auth,
+)
 from core.models import UserRole
 from core.database import db
-from core.constants import response_status
 
 api = Namespace("user-roles", description="User role related operations")
 
@@ -41,66 +44,63 @@ def delete_user_role(id_):
     UserRole.query.filter_by(id=id_).delete()
 
 
+parser_auth = reqparse.RequestParser()
+parser_auth.add_argument("Authorization", type=str, location="headers")
+
+
 @api.route("/")
-class UserRoles(CustomResource):
+class UserRoles(Resource, CustomeResponse):
     @api.doc("Get all user_roles")
+    @return_500_for_sever_error
     def get(self):
-        try:
-            return self.send(status=response_status.SUCCESS, result=get_user_roles())
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+        return self.send(response_type="SUCCESS", result=get_user_roles())
 
     @api.doc("create a new user_role")
-    @api.expect(parser_post)
-    def post(self):
-        try:
+    @api.expect(parser_post, parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def post(self, **kwargs):
+        if kwargs["auth_user"].is_admin():
             args = parser_post.parse_args()
             result, message = create_user_role(
                 args["name"], args.get("description") or ""
             )
             if result:
-                return self.send(status=response_status.CREATED, result=result.id)
-            return self.send(status=response_status.FAIL, message=message)
-
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+                return self.send(response_type="CREATED", result=result.id)
+            return self.send(response_type="FAIL", additional_message=message)
+        return self.send(response_type="FORBIDDEN")
 
 
 @api.route("/<int:id_>")
 @api.param("id_", "The user_role identifier")
-class user_role(CustomResource):
+class user_role(Resource, CustomeResponse):
+    @return_500_for_sever_error
     def get(self, id_):
-        try:
-            user_role = get_user_role(id_)
-            if user_role:
-                return self.send(status=response_status.SUCCESS, result=user_role)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+        if user_role := get_user_role(id_):
+            return self.send(response_type="SUCCESS", result=user_role)
+        return self.send(response_type="NOT_FOUND")
 
     @api.doc("update user_role name")
-    @api.expect(parser_post)
-    def put(self, id_):
-        try:
-            if get_user_role(id_):
+    @api.expect(parser_post, parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def put(self, id_, **kwargs):
+        if get_user_role(id_):
+            if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
                 update_user_role(id_, args["name"])
-                return self.send(status=response_status.NO_CONTENT)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")
 
     @api.doc("delete a user_role")
-    def delete(self, id_):
-        try:
-            if get_user_role(id_):
+    @api.expect(parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def delete(self, id_, **kwargs):
+        if get_user_role(id_):
+            if kwargs["auth_user"].is_admin():
                 delete_user_role(id_)
-                return self.send(status=response_status.NO_CONTENT)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")

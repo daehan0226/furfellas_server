@@ -14,12 +14,14 @@ class TodoParent(BaseModel):
     finish_datetime = db.Column(db.DateTime)
     created_datetime = db.Column(db.DateTime, default=datetime.now())
     todo_children = db.relationship("TodoChildren", cascade="all, delete-orphan")
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"))
 
-    def __init__(self, task, repeat_interval, start_datetime, finish_datetime):
+    def __init__(self, task, repeat_interval, start_datetime, finish_datetime, user_id):
         self.task = task
         self.repeat_interval = repeat_interval
         self.start_datetime = start_datetime
         self.finish_datetime = finish_datetime
+        self.user_id = user_id
 
     def __repr__(self):
         return self._repr(
@@ -27,6 +29,7 @@ class TodoParent(BaseModel):
             name=self.task,
             start_datetime=self.start_datetime,
             finish_datetime=self.finish_datetime,
+            user_id=self.user_id,
         )
 
     def _set_intervals(self):
@@ -65,6 +68,7 @@ class TodoParent(BaseModel):
             "start_datetime": self.start_datetime.isoformat(),
             "finish_datetime": self.finish_datetime.isoformat(),
             "created_datetime": self.created_datetime.isoformat(),
+            "user_id": self.user_id,
         }
 
 

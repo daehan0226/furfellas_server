@@ -2,7 +2,6 @@ import os
 import pytest
 import json
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
 from app import create_app
@@ -20,23 +19,20 @@ def client():
     app.testing = True
     with app.test_client() as client:
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
-
         with app.app_context():
             db.create_all()
             yield client
             db.session.rollback()
             db.session.close()
-            db.drop_all()
 
 
-@pytest.fixture()
-def db_engine():
-    """yields a SQLAlchemy engine which is suppressed after the test session"""
-    engine_ = create_engine("sqlite:///test.db", echo=True)
+def pytest_sessionfinish(session, exitstatus):
+    """whole test run finishes."""
+    app = create_app()
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
 
-    yield engine_
-
-    engine_.dispose()
+    with app.app_context():
+        db.drop_all()
 
 
 class ApiCallHelpers:

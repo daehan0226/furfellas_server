@@ -13,6 +13,7 @@ class Photo(BaseModel):
     location_id = db.Column(
         db.Integer, db.ForeignKey("location.id", ondelete="SET NULL")
     )
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"))
     create_datetime = db.Column(db.DateTime, default=datetime.now())
     upload_datetime = db.Column(db.DateTime, default=datetime.now())
 
@@ -23,6 +24,7 @@ class Photo(BaseModel):
         self.image_id = columns["image_id"]
         self.type_id = columns["type_id"]
         self.location_id = columns["location_id"]
+        self.user_id = columns["user_id"]
         self.create_datetime = columns["create_datetime"]
 
     def __repr__(self):
@@ -32,6 +34,7 @@ class Photo(BaseModel):
             image_id=self.image_id,
             type_id=self.type_id,
             location_id=self.location_id,
+            user_id=self.user_id,
             create_datetime=self.create_datetime,
             upload_datetime=self.upload_datetime,
         )
@@ -39,13 +42,14 @@ class Photo(BaseModel):
     @property
     def serialize(self):
         """Return object data in easily serializable format"""
-        from core.models import Location, PhotoType
+        from core.models import Location, PhotoType, User
 
         return {
             "id": self.id,
             "type": PhotoType.query.get(self.type_id).serialize,
             "description": self.description,
             "image_id": self.image_id,
+            "user_id": User.query.get(self.user_id).serialize,
             "create_datetime": self.create_datetime.isoformat(),
             "upload_datetime": self.upload_datetime.isoformat(),
             "location": Location.query.get(self.location_id).serialize,

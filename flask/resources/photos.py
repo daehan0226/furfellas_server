@@ -160,6 +160,7 @@ class Photos(Resource, CustomeResponse):
             if image_id := upload_photo(args["file"]):
                 args["image_id"] = image_id
                 args["create_datetime"] = datetime.now()
+                args["user_id"] = kwargs["auth_user"].id
                 result, message = save_photo(args)
                 if result:
                     return self.send(response_type="CREATED", result=result.id)

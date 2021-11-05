@@ -36,14 +36,15 @@ def test_post_photo_type(client, api_helpers):
 
 
 def test_get_photo_type_by_name(client, api_helpers):
-    name = "test-get-photo_type-by-name"
+    name = "test-get-photo_type_by_name"
     data = {"name": name}
     url = "/api/photo-types/"
     client.post(url, data=json.dumps(data), headers=api_helpers.headers)
     response = client.get(f"/api/photo-types/?name={name}")
     photo_types = api_helpers.convert_response_to_dict(response)["result"]
+    names = [photo_type["name"] for photo_type in photo_types]
 
-    assert photo_types[0]["name"] == name
+    assert name in names
 
 
 def test_delete_photo_type_by_id(client, api_helpers):

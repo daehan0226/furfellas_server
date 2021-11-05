@@ -3,19 +3,42 @@ import time
 import traceback
 from datetime import datetime
 from threading import Thread
+from dotenv import load_dotenv
 
 from dateutil.relativedelta import relativedelta
-from flask_restplus import Namespace, reqparse
+from flask_restplus import Namespace, reqparse, Resource
 
-from core.resource import CustomResource
+from core.response import (
+    CustomeResponse,
+    return_500_for_sever_error,
+    return_404_for_no_auth,
+)
 from core.models import User as UserModel
 from core.models import Session as SessionModel
-from core.database import get_db_session
+from core.database import get_db_session, db
 
 api = Namespace("sessions", description="Sessions related operations")
 
+
+APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
+dotenv_path = os.path.join(APP_ROOT, ".env")
+load_dotenv(dotenv_path)
+
+
 SESSION_CHECK_TIME_SECONDS = int(os.getenv("SESSION_CHECK_TIME_HOURS")) * 3600
 SESSION_VALID_TIME_SECONDS = int(os.getenv("SESSION_VALID_TIME_HOURS")) * 3600
+
+
+def create_session(user_id):
+    return SessionModel(user_id=user_id).create()
+
+
+def get_session(user_id=None, token=None):
+    if user_id is not None:
+        session = SessionModel.query.filter_by(user_id=user_id).first()
+    elif token is not None:
+        session = SessionModel.query.filter_by(token=token).first()
+    return session.serialize if session else None
 
 
 def expire_old_session_job():
@@ -49,60 +72,61 @@ def get_user_if_verified(username, password):
     if user:
         if user.check_password(password):
             return user
+    return None
 
 
-def delete_session(id):
-    return SessionModel.query.filter_by(user_id=id).delete()
+def delete_session(id_=None, token=None):
+    if id_ is not None:
+        SessionModel.query.filter_by(user_id=id_).delete()
+    elif token is not None:
+        SessionModel.query.filter_by(token=token).delete()
+    db.session.commit()
 
 
 parser_create = reqparse.RequestParser()
 parser_create.add_argument("username", type=str, required=True, help="Unique username")
 parser_create.add_argument("password", type=str, required=True, help="Password")
 
-parser_header = reqparse.RequestParser()
-parser_header.add_argument("Authorization", type=str, required=True, location="headers")
+parser_auth = reqparse.RequestParser()
+parser_auth.add_argument("Authorization", type=str, location="headers")
 
 
 @api.route("/")
 @api.response(401, "Session not found")
-class Session(CustomResource):
-    @api.doc("create_session")
+class Session(Resource, CustomeResponse):
     @api.expect(parser_create)
+    @return_500_for_sever_error
     def post(self):
         """Create a session after verifying user info"""
-        try:
-            args = parser_create.parse_args()
-            user = get_user_if_verified(args["username"], args["password"])
-            if user:
-                delete_session(user.id)
-                session = SessionModel(user_id=user.id)
-                session.create()
-                return self.send(status=201, result=session.token)
-            else:
-                return self.send(status=400, message="Check your id and password.")
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+        args = parser_create.parse_args()
+        if user := get_user_if_verified(args["username"], args["password"]):
+            delete_session(id_=user.id)
+            return self.send(
+                response_type="CREATED", result=create_session(user.id).token
+            )
+        return self.send(
+            response_type="FAIL", additional_message="Check your id and password."
+        )
+
+    @api.expect(parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def delete(self, **kwargs):
+        if kwargs["auth_user"] is not None:
+            delete_session(id_=kwargs["auth_user"].id)
+            return self.send(response_type="NO_CONTENT")
+        return self.send(response_type="NOT_FOUND")
 
 
 @api.route("/validate")
-class SessionVlidation(CustomResource):
-    @api.doc("get_session")
-    @api.expect(parser_header)
-    def get(self):
+class SessionVlidation(Resource, CustomeResponse):
+    @api.expect(parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def get(self, **kwargs):
         """Check if session is valid"""
-        try:
-            args = parser_header.parse_args()
-            try:
-                session = SessionModel.query.filter_by(
-                    token=args["Authorization"]
-                ).first()
-                if session:
-                    return self.send(status=200, result=session.user_id)
-                else:
-                    self.send(status=403)
-            except:
-                return self.send(status=400)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+        if kwargs["auth_user"] is not None:
+            return self.send(
+                response_type="SUCCESS", result=kwargs["auth_user"].serialize
+            )
+        return self.send(response_type="FAIL")

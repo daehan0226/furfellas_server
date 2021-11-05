@@ -1,8 +1,6 @@
 from core.database import db
 from sqlalchemy.orm import relationship, backref
 from core.models import BaseModel
-from core.models.photo import Photo
-from core.models.action import Action
 
 
 class PhotoAction(BaseModel):

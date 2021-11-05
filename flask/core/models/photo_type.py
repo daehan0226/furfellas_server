@@ -1,10 +1,9 @@
 from core.database import db
+from core.models import BaseModel
 
-from core.models.base import BaseModel
 
-
-class Location(BaseModel):
-    __tablename__ = "location"
+class PhotoType(BaseModel):
+    __tablename__ = "photo_type"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), unique=True, nullable=False)
 

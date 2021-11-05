@@ -1,31 +1,19 @@
 import traceback
-from flask_restplus import Namespace, reqparse
+from flask_restplus import Namespace, reqparse, Resource
 
-from core.models import TodoChildren, TodoParent
-from core.resource import CustomResource
+from core.models import TodoChildren
+from core.response import CustomeResponse, return_500_for_sever_error
 from core.database import db
 
 api = Namespace("todos", description="todos related operations")
 
 
 def get_todos(parent_id=None):
+    query = db.session.query(TodoChildren)
     if parent_id is not None:
-        todos = (
-            db.session.query(TodoParent, TodoChildren)
-            .join(TodoChildren)
-            .filter(TodoParent.id == parent_id)
-            .all()
-        )
-    else:
-        todos = db.session.query(TodoParent, TodoChildren).join(TodoChildren).all()
-    serialized_todos = []
-    for todo in todos:
-        serialized_todo = {}
-        parent, child = todo
-        serialized_todo.update(parent.serialize)
-        serialized_todo.update(child.serialize)
-        serialized_todos.append(serialized_todo)
-    return serialized_todos
+        query = query.filter(TodoChildren.parent_id == parent_id)
+    todos = query.all()
+    return [todo.serialize for todo in todos]
 
 
 parser_parent_id = reqparse.RequestParser()
@@ -33,14 +21,12 @@ parser_parent_id.add_argument("parent_id", type=int)
 
 
 @api.route("/")
-class Todos(CustomResource):
+class Todos(Resource, CustomeResponse):
     @api.expect(parser_parent_id)
+    @return_500_for_sever_error
     def get(self):
         """ "Get all todos"""
-        try:
-            args = parser_parent_id.parse_args()
-            todos = get_todos(parent_id=args["parent_id"])
-            return self.send(status=200, result=todos)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+        args = parser_parent_id.parse_args()
+        return self.send(
+            response_type="SUCCESS", result=get_todos(parent_id=args["parent_id"])
+        )

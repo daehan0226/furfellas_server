@@ -6,8 +6,7 @@ from core.models import BaseModel
 class Action(BaseModel):
     __tablename__ = "action"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200))
-
+    name = db.Column(db.String(200), unique=True, nullable=False)
     photos = relationship("Photo", secondary="photo_action")
 
     def __init__(self, name):
@@ -15,10 +14,3 @@ class Action(BaseModel):
 
     def __repr__(self):
         return self._repr(id=self.id, name=self.name)
-
-    def delete(self, id=None, name=None):
-        if id is not None:
-            Action.query.filter_by(id=id).delete()
-        elif name is not None:
-            Action.query.filter_by(name=name).delete()
-        db.session.commit()

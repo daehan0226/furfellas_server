@@ -2,6 +2,9 @@ flask/venv/*
 flask/logs/*
 flask/__pychche__/*
 flask/test.db
+flask/alembic/*
+flask/alembic.ini
+
 *.json
 *.pyc
 .env

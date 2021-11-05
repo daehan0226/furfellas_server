@@ -2,7 +2,6 @@ import sqlalchemy
 from datetime import datetime
 from typing import Dict, Any
 
-
 from core.database import db
 
 
@@ -34,6 +33,10 @@ class BaseModel(db.Model):
         db.session.add(self)
         db.session.commit()
         return self
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
     @property
     def serialize(self):

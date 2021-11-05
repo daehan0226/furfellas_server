@@ -1,8 +1,11 @@
 import traceback
-from flask_restplus import Namespace, reqparse
-from core.resource import CustomResource
+import sqlalchemy
+from flask_restplus import Namespace, reqparse, Resource
+
+from core.response import CustomeResponse
 from core.models import Location as LocationModel
 from core.database import db
+from core.response import return_500_for_sever_error, return_404_for_no_auth
 
 api = Namespace("locations", description="locations related operations")
 
@@ -10,88 +13,102 @@ parser_post = reqparse.RequestParser()
 parser_post.add_argument("key", type=str, help="location key")
 parser_post.add_argument("name", type=str, required=True, help="location name")
 
+parser_search = reqparse.RequestParser()
+parser_search.add_argument("name", type=str, help="location name")
+
 
 def create_location(name):
-    location = LocationModel(name)
-    location.create()
-    return location.id
+    try:
+        location = LocationModel(name)
+        location.create()
+        return location, ""
+    except sqlalchemy.exc.IntegrityError as e:
+        return False, f"Location name '{name}' already exsits."
 
 
-def get_location(id):
-    location = LocationModel.query.filter_by(id=id).first()
+def get_locations(name=None):
+    if name is not None:
+        locations = LocationModel.query.filter(LocationModel.name.like(f"%{name}%"))
+    else:
+        locations = LocationModel.query.all()
+    return [location.serialize for location in locations]
+
+
+def get_location(id_):
+    location = LocationModel.query.get(id_)
     return location.serialize if location else None
 
 
-def update_location(id, name):
-    try:
-        location = LocationModel.query.filter_by(id=id).first()
-        location.name = name
-        db.session.commit()
-        return True
-    except:
-        return False
+def update_location(id_, name):
+    location = LocationModel.query.get(id_)
+    location.name = name
+    db.session.commit()
 
 
-def delete_location(id):
-    return LocationModel.query.filter_by(id=id).delete()
+def delete_location(id_):
+    LocationModel.query.filter_by(id=id_).delete()
 
 
-def get_locations():
-    return [location.serialize for location in LocationModel.query.all()]
+parser_auth = reqparse.RequestParser()
+parser_auth.add_argument("Authorization", type=str, location="headers")
 
 
 @api.route("/")
-class Locations(CustomResource):
+class Locations(Resource, CustomeResponse):
     @api.doc("Get all locations")
+    @api.expect(parser_search)
+    @return_500_for_sever_error
     def get(self):
-        try:
-            locations = get_locations()
-            if locations is None:
-                return self.send(status=500)
-            return self.send(status=200, result=locations)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+        args = parser_search.parse_args()
+        return self.send(
+            response_type="SUCCESS", result=get_locations(name=args["name"])
+        )
 
     @api.doc("create a new location")
-    @api.expect(parser_post)
-    def post(self):
-        try:
+    @api.expect(parser_post, parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def post(self, **kwargs):
+        if kwargs["auth_user"].is_admin():
             args = parser_post.parse_args()
-            result = create_location(args["name"])
-            if result is None:
-                return self.send(status=500)
-            return self.send(status=201)
+            result, message = create_location(args["name"])
+            if result:
+                return self.send(response_type="CREATED", result=result.id)
+            return self.send(response_type="FAIL", additional_message=message)
 
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+        return self.send(response_type="FORBIDDEN")
 
 
 @api.route("/<int:id_>")
 @api.param("id_", "The location identifier")
-class Location(CustomResource):
+class Location(Resource, CustomeResponse):
+    @return_500_for_sever_error
+    def get(self, id_):
+        if location := get_location(id_):
+            return self.send(response_type="SUCCESS", result=location)
+        return self.send(response_type="NOT_FOUND")
+
     @api.doc("update location name")
-    @api.expect(parser_post)
-    def put(self, id_):
-        try:
-            args = parser_post.parse_args()
-            result = update_location(id_, args["name"])
-            if result:
-                return self.send(status=204)
-            return self.send(status=400)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+    @api.expect(parser_post, parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def put(self, id_, **kwargs):
+        if get_location(id_):
+            if kwargs["auth_user"].is_admin():
+                args = parser_post.parse_args()
+                update_location(id_, args["name"])
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")
 
     @api.doc("delete a location")
-    def delete(self, id_):
-        try:
-            result = db.delete_location(id_)
-            if result is None:
-                return self.send(status=500)
-            return self.send(status=200)
-
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+    @api.expect(parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def delete(self, id_, **kwargs):
+        if get_location(id_):
+            if kwargs["auth_user"].is_admin():
+                delete_location(id_)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")

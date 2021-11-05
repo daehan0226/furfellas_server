@@ -1,7 +1,12 @@
 from flask_restplus import Namespace, reqparse
-
+from flask_restplus import Resource
 from core.resource import CustomResource
-from core.response import return_500_for_sever_error, return_404_for_no_auth
+from core.response import (
+    return_500_for_sever_error,
+    return_404_for_no_auth,
+    gen_dupilcate_keys_message,
+    CustomeResponse,
+)
 from core.models import User as UserModel, UserRole as UserRoleModel
 from core.database import db
 
@@ -86,7 +91,7 @@ parser_search.add_argument("email", type=str)
 
 
 @api.route("/")
-class Users(CustomResource):
+class Users(Resource, CustomeResponse):
     @api.expect(parser_search, parser_auth)
     @return_404_for_no_auth
     @return_500_for_sever_error
@@ -98,27 +103,22 @@ class Users(CustomResource):
         return self.send(response_type="FORBIDDEN")
 
     @api.doc("create a new user")
-    @api.expect(parser_create, parser_auth)
-    @return_404_for_no_auth
+    @api.expect(parser_create)
     @return_500_for_sever_error
-    def post(self, **kwargs):
+    def post(self):
         """Create an user"""
-        if kwargs["auth_user"].is_admin():
-            args = parser_create.parse_args()
-            duplicate_keys = check_user_info_duplicates(args)
-            if duplicate_keys:
-                return self.send(
-                    response_type="FAIL",
-                    message=f"The given {duplicate_keys.join(', ')} exist(s).",
-                )
-
-            result = create_user(args)
-            return self.send(response_type="CREATED", result=result.id)
-        return self.send(response_type="FORBIDDEN")
+        args = parser_create.parse_args()
+        if duplicate_keys := check_user_info_duplicates(args):
+            return self.send(
+                response_type="FAIL",
+                additional_message=gen_dupilcate_keys_message(duplicate_keys),
+            )
+        result = create_user(args)
+        return self.send(response_type="CREATED", result=result.id)
 
 
 @api.route("/<int:id_>")
-class User(CustomResource):
+class User(Resource, CustomeResponse):
     @api.doc("Get a user")
     @api.expect(parser_auth)
     @return_404_for_no_auth

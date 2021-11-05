@@ -22,7 +22,8 @@ def return_404_for_no_auth(f):
             if session := get_session(token=auth_header):
                 user = UserModel.query.get(session["user_id"])
             else:
-                return CustomeResponse.generate(response_type="NO_AUTH")
+                response = CustomeResponse()
+                return response.send(response_type="NO_AUTH")
         return f(*args, **kwargs, auth_user=user)
 
     wrapper.__doc__ = f.__doc__
@@ -36,7 +37,8 @@ def return_500_for_sever_error(f):
             return f(*args, **kwargs)
         except:
             traceback.print_exc()
-            return CustomeResponse.generate(
+            response = CustomeResponse()
+            return response.send(
                 response_type="SEVER_ERROR",
             )
 
@@ -46,16 +48,25 @@ def return_500_for_sever_error(f):
 
 
 class CustomeResponse:
-    @staticmethod
-    def generate(status=None, result=None, message=None, response_type=None, lang="en"):
-        headers = {}
-        headers["Access-Control-Allow-Origin"] = "*"
-        headers["Access-Control-Allow-Headers"] = "*"
-        headers["Access-Control-Allow-Credentials"] = True
+    def send(
+        self,
+        result=None,
+        response_type=None,
+        lang="en",
+        additional_message=None,
+    ):
 
-        if response_type is not None:
-            status = response_status[response_type]
-            message = message if message else response_message[lang][response_type]
+        headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "True",
+        }
+
+        status = response_status[response_type]
+        message = response_message[lang][response_type]
+
+        if additional_message is not None:
+            message += f"({additional_message})"
 
         response_body = {"result": result, "message": message}
 
@@ -66,3 +77,10 @@ class CustomeResponse:
             headers=headers,
             mimetype="application/json",
         )
+
+
+def gen_dupilcate_keys_message(keys, lang="en"):
+    if lang == "en":
+        return f"The given {(', ').join(keys)} already exist(s)."
+    if lang == "kr":
+        return f"{(', ').join(keys)} (들)은 이미 존재합니다."

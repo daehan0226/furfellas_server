@@ -2,7 +2,6 @@ import sqlalchemy
 from datetime import datetime
 from typing import Dict, Any
 
-
 from core.database import db
 
 

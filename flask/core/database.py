@@ -1,10 +1,14 @@
 import os
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-db = SQLAlchemy()
+from flask_sqlalchemy import SQLAlchemy, declarative_base
+
+Base = declarative_base()
+db = SQLAlchemy(model_class=Base)
+
+metadata = Base.metadata
 
 
 def get_db_session():

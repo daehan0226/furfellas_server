@@ -14,12 +14,23 @@ class TodoParent(BaseModel):
     finish_datetime = db.Column(db.DateTime)
     created_datetime = db.Column(db.DateTime, default=datetime.now())
     todo_children = db.relationship("TodoChildren", cascade="all, delete-orphan")
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"))
 
-    def __init__(self, task, repeat_interval, start_datetime, finish_datetime):
+    def __init__(self, task, repeat_interval, start_datetime, finish_datetime, user_id):
         self.task = task
         self.repeat_interval = repeat_interval
         self.start_datetime = start_datetime
         self.finish_datetime = finish_datetime
+        self.user_id = user_id
+
+    def __repr__(self):
+        return self._repr(
+            id=self.id,
+            name=self.task,
+            start_datetime=self.start_datetime,
+            finish_datetime=self.finish_datetime,
+            user_id=self.user_id,
+        )
 
     def _set_intervals(self):
         interval = int(self.repeat_interval[:-1])
@@ -46,11 +57,6 @@ class TodoParent(BaseModel):
             datetime += relativedelta(**self._set_intervals())
         return result
 
-    def delete(self, id: int):
-        if id is not None:
-            TodoParent.query.filter_by(id).delete()
-            return db.session.commit()
-
     @property
     def serialize(self):
         """Return object data in easily serializable format"""
@@ -62,6 +68,7 @@ class TodoParent(BaseModel):
             "start_datetime": self.start_datetime.isoformat(),
             "finish_datetime": self.finish_datetime.isoformat(),
             "created_datetime": self.created_datetime.isoformat(),
+            "user_id": self.user_id,
         }
 
 
@@ -77,10 +84,12 @@ class TodoChildren(BaseModel):
         self.datetime = datetime
         self.parent_id = str(parent_id)
 
-    def create(self):
-        db.session.add(self)
-        db.session.commit()
-        return self
+    def __repr__(self):
+        return self._repr(
+            id=self.id,
+            datetime=self.datetime,
+            parent_id=self.parent_id,
+        )
 
     @staticmethod
     def create_all(objects):
@@ -88,11 +97,6 @@ class TodoChildren(BaseModel):
             [TodoChildren(obj["datetime"], obj["parent_id"]) for obj in objects]
         )
         db.session.commit()
-
-    def delete(self, id):
-        if id is not None:
-            TodoChildren.query.filter_by(id).delete()
-            db.session.commit()
 
     @property
     def serialize(self):

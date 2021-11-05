@@ -7,7 +7,6 @@ class Action(BaseModel):
     __tablename__ = "action"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), unique=True, nullable=False)
-
     photos = relationship("Photo", secondary="photo_action")
 
     def __init__(self, name):
@@ -15,7 +14,3 @@ class Action(BaseModel):
 
     def __repr__(self):
         return self._repr(id=self.id, name=self.name)
-
-    def delete(self, id):
-        Action.query.filter_by(id=id).delete()
-        db.session.commit()

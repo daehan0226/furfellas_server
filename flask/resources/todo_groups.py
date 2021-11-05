@@ -1,10 +1,13 @@
-import traceback
 from datetime import datetime
-from flask_restplus import Namespace, reqparse
+from flask_restplus import Namespace, reqparse, Resource
 
 
 from core.models import TodoParent, TodoChildren
-from core.resource import CustomResource
+from core.response import (
+    CustomeResponse,
+    return_500_for_sever_error,
+    return_404_for_no_auth,
+)
 
 
 api = Namespace("todo-groups", description="todo groups related operations")
@@ -33,7 +36,7 @@ def create_todo_group(arg):
     todo_children = todo_parent.set_todo_children()
     TodoChildren.create_all(todo_children)
 
-    return todo_parent.id
+    return todo_parent
 
 
 def get_todo_group(id):
@@ -56,52 +59,45 @@ parser_post.add_argument("start_datetime", type=str, required=True)
 parser_post.add_argument("finish_datetime", type=str)
 
 
+parser_auth = reqparse.RequestParser()
+parser_auth.add_argument("Authorization", type=str, location="headers")
+
+
 @api.route("/")
-class TodoGroups(CustomResource):
+class TodoGroups(Resource, CustomeResponse):
+    @return_500_for_sever_error
     def get(self):
         """ "Get all todo-groups"""
-        try:
-            todo_groups = get_todo_groups()
-            return self.send(status=200, result=todo_groups)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+        return self.send(response_type="SUCCESS", result=get_todo_groups())
 
     @api.expect(parser_post)
-    def post(self):
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def post(self, **kwargs):
         """ "Create a new todo"""
-        try:
+        if kwargs["auth_user"].is_admin():
             args = parser_post.parse_args()
             result = create_todo_group(args)
-            if result is None:
-                return self.send(status=500)
-            return self.send(status=201, result=result)
-
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+            return self.send(response_type="CREATED", result=result.id)
+        return self.send(response_type="FORBIDDEN")
 
 
-@api.route("/<int:id>")
-class TodoGroup(CustomResource):
+@api.route("/<int:id_>")
+class TodoGroup(Resource, CustomeResponse):
     @api.doc("Get a todo")
-    def get(self, id):
-        try:
-            todo = get_todo_group(id)
-            if todo:
-                return self.send(status=200, result=todo)
-            return self.send(status=404)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+    @return_500_for_sever_error
+    def get(self, id_):
+        if todo := get_todo_group(id_):
+            return self.send(response_type="SUCCESS", result=todo)
+        return self.send(response_type="NOT_FOUND")
 
     @api.doc("Delete a todo")
-    def delete(self, id):
-        try:
-            if delete_todo_group(id):
-                return self.send(status=204)
-
-            return self.send(status=404)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def delete(self, id_, **kwargs):
+        if get_todo_group(id_):
+            if kwargs["auth_user"].is_admin():
+                if delete_todo_group(id_):
+                    return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")

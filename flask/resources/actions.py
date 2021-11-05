@@ -1,11 +1,10 @@
-import traceback
 import sqlalchemy
 from flask_restplus import Namespace, reqparse
 
 from core.resource import CustomResource
 from core.models import Action as ActionModel
 from core.database import db
-from core.constants import response_status
+from core.response import return_500_for_sever_error, return_404_for_no_auth
 
 api = Namespace("actions", description="actions related operations")
 
@@ -49,68 +48,61 @@ def delete_action(id_):
     ActionModel.query.filter_by(id=id_).delete()
 
 
+parser_auth = reqparse.RequestParser()
+parser_auth.add_argument("Authorization", type=str, location="headers")
+
+
 @api.route("/")
 class Actions(CustomResource):
     @api.doc("Get all actions")
     @api.expect(parser_search)
+    @return_500_for_sever_error
     def get(self):
-        try:
-            args = parser_search.parse_args()
-            return self.send(
-                status=response_status.SUCCESS, result=get_actions(name=args["name"])
-            )
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+        args = parser_search.parse_args()
+        return self.send(response_type="SUCCESS", result=get_actions(name=args["name"]))
 
     @api.doc("create a new action")
-    @api.expect(parser_post)
-    def post(self):
-        try:
-            args = parser_post.parse_args()
-            result, message = creat_action(args["name"])
-            if result:
-                return self.send(status=response_status.CREATED, result=result.id)
-            return self.send(status=response_status.FAIL, message=message)
-
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+    @api.expect(parser_post, parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def post(self, **kwargs):
+        args = parser_post.parse_args()
+        result, message = creat_action(args["name"])
+        if result:
+            return self.send(response_type="CREATED", result=result.id)
+        return self.send(response_type="FAIL", message=message)
 
 
 @api.route("/<int:id_>")
 @api.param("id_", "The action identifier")
 class Action(CustomResource):
+    @return_500_for_sever_error
     def get(self, id_):
-        try:
-            action = get_action(id_)
-            if action:
-                return self.send(status=response_status.SUCCESS, result=action)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+        if action := get_action(id_):
+            return self.send(response_type="SUCCESS", result=action)
+        return self.send(response_type="NOT_FOUND")
 
     @api.doc("update action name")
-    @api.expect(parser_post)
-    def put(self, id_):
-        try:
-            if get_action(id_):
+    @api.expect(parser_post, parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def put(self, id_, **kwargs):
+        if get_action(id_):
+            if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
                 update_action(id_, args["name"])
-                return self.send(status=response_status.NO_CONTENT)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")
 
     @api.doc("delete an action")
-    def delete(self, id_):
-        try:
-            if get_action(id_):
+    @api.expect(parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def delete(self, id_, **kwargs):
+        if get_action(id_):
+            if kwargs["auth_user"].is_admin():
                 delete_action(id_)
-                return self.send(status=response_status.NO_CONTENT)
-            return self.send(status=response_status.NOT_FOUND)
-        except:
-            traceback.print_exc()
-            return self.send(status=response_status.SEVER_ERROR)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")

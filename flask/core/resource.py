@@ -9,7 +9,8 @@ class CustomResource(Resource):
 
     def send(self, *args, **kwargs):
         return CustomeResponse.generate(
-            kwargs["status"],
+            kwargs.get("status"),
             result=kwargs.get("result"),
             message=kwargs.get("message"),
+            response_type=kwargs.get("response_type"),
         )

@@ -3,7 +3,10 @@ import json
 
 from flask import Response, current_app, request
 
-from core.constants import response_status, response_message
+from core.constants.response import (
+    status as response_status,
+    message as response_message,
+)
 
 
 def return_404_for_no_auth(f):
@@ -19,9 +22,7 @@ def return_404_for_no_auth(f):
             if session := get_session(token=auth_header):
                 user = UserModel.query.get(session["user_id"])
             else:
-                return CustomeResponse.generate(
-                    status=response_status.NO_AUTH, message=response_message.NO_AUTH
-                )
+                return CustomeResponse.generate(response_type="NO_AUTH")
         return f(*args, **kwargs, auth_user=user)
 
     wrapper.__doc__ = f.__doc__
@@ -36,7 +37,7 @@ def return_500_for_sever_error(f):
         except:
             traceback.print_exc()
             return CustomeResponse.generate(
-                status=response_status.SEVER_ERROR, message=response_message.SEVER_ERROR
+                response_type="SEVER_ERROR",
             )
 
     wrapper.__doc__ = f.__doc__
@@ -46,11 +47,15 @@ def return_500_for_sever_error(f):
 
 class CustomeResponse:
     @staticmethod
-    def generate(status=None, result=None, message=None):
+    def generate(status=None, result=None, message=None, response_type=None, lang="en"):
         headers = {}
         headers["Access-Control-Allow-Origin"] = "*"
         headers["Access-Control-Allow-Headers"] = "*"
         headers["Access-Control-Allow-Credentials"] = True
+
+        if response_type is not None:
+            status = response_status[response_type]
+            message = message if message else response_message[lang][response_type]
 
         response_body = {"result": result, "message": message}
 

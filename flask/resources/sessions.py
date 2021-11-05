@@ -123,7 +123,7 @@ class SessionVlidation(Resource, CustomeResponse):
     @api.expect(parser_auth)
     @return_404_for_no_auth
     @return_500_for_sever_error
-    def get(self, **kwargs):
+    def head(self, **kwargs):
         """Check if session is valid"""
         if kwargs["auth_user"] is not None:
             return self.send(

@@ -104,7 +104,7 @@ class Session(Resource, CustomeResponse):
             result = {
                 "user": user.username,
                 "is_admin": 1 if user.is_admin() else 0,
-                "token": create_session(user.id).token,
+                "session": create_session(user.id).token,
             }
             return self.send(response_type="CREATED", result=result)
         return self.send(

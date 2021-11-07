@@ -6,7 +6,7 @@ from core.models import TodoParent, TodoChildren
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
-    return_404_for_no_auth,
+    return_401_for_no_auth,
 )
 
 
@@ -72,7 +72,7 @@ class TodoGroups(Resource, CustomeResponse):
         return self.send(response_type="SUCCESS", result=get_todo_groups())
 
     @api.expect(parser_post)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         """ "Create a new todo"""
@@ -93,7 +93,7 @@ class TodoGroup(Resource, CustomeResponse):
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("Delete a todo")
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
         if get_todo_group(id_):

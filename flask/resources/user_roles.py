@@ -1,10 +1,9 @@
-import traceback
 import sqlalchemy
 from flask_restplus import Namespace, reqparse, Resource
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
-    return_404_for_no_auth,
+    return_401_for_no_auth,
 )
 from core.models import UserRole
 from core.database import db
@@ -57,7 +56,7 @@ class UserRoles(Resource, CustomeResponse):
 
     @api.doc("create a new user_role")
     @api.expect(parser_post, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         if kwargs["auth_user"].is_admin():
@@ -82,7 +81,7 @@ class user_role(Resource, CustomeResponse):
 
     @api.doc("update user_role name")
     @api.expect(parser_post, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
         if get_user_role(id_):
@@ -95,7 +94,7 @@ class user_role(Resource, CustomeResponse):
 
     @api.doc("delete a user_role")
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
         if get_user_role(id_):

@@ -6,7 +6,7 @@ from flask import Response, current_app, request
 from core.constants import response
 
 
-def return_404_for_no_auth(f):
+def return_401_for_no_auth(f):
     def wrapper(*args, **kwargs):
         user = None
         from core.models import User as UserModel

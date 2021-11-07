@@ -5,7 +5,7 @@ from flask_restplus import Namespace, reqparse, Resource
 from core.response import CustomeResponse
 from core.models import PhotoType as PhotoTypeModel
 from core.database import db
-from core.response import return_500_for_sever_error, return_404_for_no_auth
+from core.response import return_500_for_sever_error, return_401_for_no_auth
 
 api = Namespace("photo-types", description="photo types related operations")
 
@@ -52,7 +52,7 @@ class PhotoTypes(Resource, CustomeResponse):
         return self.send(response_type="SUCCESS", result=get_photo_types())
 
     @api.expect(parser_name, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         if kwargs["auth_user"].is_admin():
@@ -74,7 +74,7 @@ class PhotoType(Resource, CustomeResponse):
         return self.send(response_type="NOT_FOUND")
 
     @api.expect(parser_name, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
         if get_photo_type(id_):
@@ -86,7 +86,7 @@ class PhotoType(Resource, CustomeResponse):
         return self.send(response_type="NOT_FOUND")
 
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
         if kwargs["auth_user"].is_admin():

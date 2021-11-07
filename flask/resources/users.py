@@ -1,9 +1,8 @@
 from flask_restplus import Namespace, reqparse
 from flask_restplus import Resource
-from core.resource import CustomResource
 from core.response import (
     return_500_for_sever_error,
-    return_404_for_no_auth,
+    return_401_for_no_auth,
     gen_dupilcate_keys_message,
     CustomeResponse,
 )
@@ -93,7 +92,7 @@ parser_search.add_argument("email", type=str)
 @api.route("/")
 class Users(Resource, CustomeResponse):
     @api.expect(parser_search, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def get(self, **kwargs):
         """Get all users"""
@@ -121,7 +120,7 @@ class Users(Resource, CustomeResponse):
 class User(Resource, CustomeResponse):
     @api.doc("Get a user")
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def get(self, id_, **kwargs):
         if user := get_user_by_id(id_):
@@ -130,7 +129,7 @@ class User(Resource, CustomeResponse):
         return self.send(response_type="NOT_FOUND")
 
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
         if get_user_by_id(id_):
@@ -141,7 +140,7 @@ class User(Resource, CustomeResponse):
         return self.send(response_type="NOT_FOUND")
 
     @api.expect(parser_create, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
         if get_user_by_id(id_):

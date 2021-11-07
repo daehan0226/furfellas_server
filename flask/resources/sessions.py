@@ -11,7 +11,7 @@ from flask_restplus import Namespace, reqparse, Resource
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
-    return_404_for_no_auth,
+    return_401_for_no_auth,
 )
 from core.models import User as UserModel
 from core.models import Session as SessionModel
@@ -112,7 +112,7 @@ class Session(Resource, CustomeResponse):
         )
 
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, **kwargs):
         if kwargs["auth_user"] is not None:
@@ -124,9 +124,9 @@ class Session(Resource, CustomeResponse):
 @api.route("/validate")
 class SessionVlidation(Resource, CustomeResponse):
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
-    def get(self, **kwargs):
+    def head(self, **kwargs):
         """Check if session is valid"""
         if kwargs["auth_user"] is not None:
             result = {

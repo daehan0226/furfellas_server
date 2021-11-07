@@ -6,12 +6,5 @@ from core.models import BaseModel
 class PhotoAction(BaseModel):
     __tablename__ = "photo_action"
     id = db.Column(db.Integer, primary_key=True)
-    photo_id = db.Column(db.Integer, db.ForeignKey("photo.id"))
-    action_id = db.Column(db.Integer, db.ForeignKey("action.id"))
-
-    photo = relationship(
-        "Photo", backref=backref("photo_action", cascade="all, delete-orphan")
-    )
-    action = relationship(
-        "Action", backref=backref("photo_action", cascade="all, delete-orphan")
-    )
+    photo_id = db.Column(db.Integer, db.ForeignKey("Photo.id"))
+    action_id = db.Column(db.Integer, db.ForeignKey("Action.id"))

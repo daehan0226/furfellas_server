@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy.orm import relationship
-from core.database import db
+from core.database import db, association_table
 from core.models import BaseModel
 
 
@@ -17,7 +17,9 @@ class Photo(BaseModel):
     create_datetime = db.Column(db.DateTime, default=datetime.now())
     upload_datetime = db.Column(db.DateTime, default=datetime.now())
 
-    actions = relationship("Action", secondary="photo_action")
+    actions = relationship(
+        "Action", secondary=association_table, back_populates="photos"
+    )
 
     def __init__(self, **columns):
         self.description = columns["description"]

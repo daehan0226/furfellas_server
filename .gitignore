@@ -4,3 +4,5 @@ flask/__pychche__/*
 *.json
 *.pyc
 .env
+
+flask/test.db

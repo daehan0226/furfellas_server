@@ -101,9 +101,12 @@ class Session(Resource, CustomeResponse):
         args = parser_create.parse_args()
         if user := get_user_if_verified(args["username"], args["password"]):
             delete_session(id_=user.id)
-            return self.send(
-                response_type="CREATED", result=create_session(user.id).token
-            )
+            result = {
+                "user": user.username,
+                "is_admin": 1 if user.is_admin() else 0,
+                "token": create_session(user.id).token,
+            }
+            return self.send(response_type="CREATED", result=result)
         return self.send(
             response_type="FAIL", additional_message="Check your id and password."
         )

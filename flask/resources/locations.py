@@ -5,7 +5,7 @@ from flask_restplus import Namespace, reqparse, Resource
 from core.response import CustomeResponse
 from core.models import Location as LocationModel
 from core.database import db
-from core.response import return_500_for_sever_error, return_404_for_no_auth
+from core.response import return_500_for_sever_error, return_401_for_no_auth
 
 api = Namespace("locations", description="locations related operations")
 
@@ -66,7 +66,7 @@ class Locations(Resource, CustomeResponse):
 
     @api.doc("create a new location")
     @api.expect(parser_post, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         if kwargs["auth_user"].is_admin():
@@ -90,7 +90,7 @@ class Location(Resource, CustomeResponse):
 
     @api.doc("update location name")
     @api.expect(parser_post, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
         if get_location(id_):
@@ -103,7 +103,7 @@ class Location(Resource, CustomeResponse):
 
     @api.doc("delete a location")
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
         if get_location(id_):

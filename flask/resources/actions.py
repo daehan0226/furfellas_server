@@ -4,7 +4,7 @@ from flask_restplus import Namespace, reqparse, Resource
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
-    return_404_for_no_auth,
+    return_401_for_no_auth,
 )
 from core.models import Action as ActionModel
 from core.database import db
@@ -66,7 +66,7 @@ class Actions(Resource, CustomeResponse):
 
     @api.doc("create a new action")
     @api.expect(parser_post, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         if kwargs["auth_user"].is_admin():
@@ -89,7 +89,7 @@ class Action(Resource, CustomeResponse):
 
     @api.doc("update action name")
     @api.expect(parser_post, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
         if get_action(id_):
@@ -102,7 +102,7 @@ class Action(Resource, CustomeResponse):
 
     @api.doc("delete an action")
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
         if get_action(id_):

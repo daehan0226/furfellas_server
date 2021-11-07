@@ -13,7 +13,7 @@ from core.google_drive_api import get_service, get_folder_id
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
-    return_404_for_no_auth,
+    return_401_for_no_auth,
 )
 
 
@@ -151,7 +151,7 @@ class Photos(Resource, CustomeResponse):
 
     @api.doc("post a photo")
     @api.expect(parser_create, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         """Upload a photo to Onedrive"""
@@ -169,7 +169,6 @@ class Photos(Resource, CustomeResponse):
 
 
 @api.route("/<id_>")
-@api.response(404, "photo not found")
 class Photo(Resource, CustomeResponse):
     @api.doc("get_photo")
     @return_500_for_sever_error
@@ -180,7 +179,7 @@ class Photo(Resource, CustomeResponse):
 
     @api.doc("delete a photo")
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
         if get_photo(id_):

@@ -17,7 +17,7 @@ def convert_to_datetime(datetime_, format="%Y-%m-%d %H:%M:%S"):
     return datetime.strptime(datetime_, format)
 
 
-def create_todo_group(arg):
+def create_todo_group(user_id, arg):
     start_datetime = convert_to_datetime(arg["start_datetime"])
     finish_datetime = (
         convert_to_datetime(arg["finish_datetime"])
@@ -30,6 +30,7 @@ def create_todo_group(arg):
         arg.get("repeat_interval") or "",
         start_datetime,
         finish_datetime,
+        user_id,
     )
     todo_parent.create()
 
@@ -77,7 +78,7 @@ class TodoGroups(Resource, CustomeResponse):
         """ "Create a new todo"""
         if kwargs["auth_user"].is_admin():
             args = parser_post.parse_args()
-            result = create_todo_group(args)
+            result = create_todo_group(kwargs["auth_user"].id, args)
             return self.send(response_type="CREATED", result=result.id)
         return self.send(response_type="FORBIDDEN")
 

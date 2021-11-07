@@ -129,7 +129,9 @@ class SessionVlidation(Resource, CustomeResponse):
     def get(self, **kwargs):
         """Check if session is valid"""
         if kwargs["auth_user"] is not None:
-            return self.send(
-                response_type="SUCCESS", result=kwargs["auth_user"].serialize
-            )
+            result = {
+                "user": kwargs["auth_user"].username,
+                "is_admin": 1 if kwargs["auth_user"].is_admin() else 0,
+            }
+            return self.send(response_type="SUCCESS", result=result)
         return self.send(response_type="FAIL")

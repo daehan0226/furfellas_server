@@ -126,7 +126,7 @@ class SessionVlidation(Resource, CustomeResponse):
     @api.expect(parser_auth)
     @return_401_for_no_auth
     @return_500_for_sever_error
-    def head(self, **kwargs):
+    def get(self, **kwargs):
         """Check if session is valid"""
         if kwargs["auth_user"] is not None:
             result = {

@@ -1,231 +1,153 @@
-import traceback
-from flask_restplus import Namespace, Resource, fields, reqparse
+from flask_restplus import Namespace, reqparse
+from flask_restplus import Resource
+from core.resource import CustomResource
+from core.response import (
+    return_500_for_sever_error,
+    return_404_for_no_auth,
+    gen_dupilcate_keys_message,
+    CustomeResponse,
+)
+from core.models import User as UserModel, UserRole as UserRoleModel
+from core.database import db
 
-from core.db import insert_user, get_user, get_users, delete_users, get_user_hashed_password_with_user_id
-from core.resource import CustomResource, json_serializer, json_serializer_all_datetime_keys
-from core.utils import token_required, verify_password
-
-
-api = Namespace('users', description='Users related operations')
-
-def _get_users():
-    try:
-        users = get_users()
-        for user in users:
-            user = json_serializer_all_datetime_keys(user)
-        return users
-    except:
-        traceback.print_exc()
-        return None
-        
-
-def _create_user(name, email, password, user_type=2):
-    try:
-        result = insert_user(name, email, password, user_type)
-        return result
-    except:
-        traceback.print_exc()
-        return None
+api = Namespace("users", description="Users related operations")
 
 
-def get_user_if_verified(name, password):
-    try:
-        user_info = get_user_hashed_password_with_user_id(name)
-        if user_info:
-            if verify_password(password, user_info["salt"], user_info["password"]):
-                return user_info
-        return None
-    except:
-        traceback.print_exc()
-        return None
-
-def get_user_idioms_count(user_id):
-    try:
-        query = gen_user_like_query(user_id)
-        return mongo.db.user_like_idiom.find(query).count()
-    except:
-        traceback.print_exc()
-        return None
-
-def get_user_idioms(user_id):
-    idioms = []
-    try:
-        likes_query = gen_user_like_query(user_id)
-        idioms_ids = []
-        for item in mongo.db.user_like_idiom.find(likes_query):
-            for key, value in item.items():
-                if key == "idiomId":
-                    idioms_ids.append(ObjectId(value))
-        idioms_query = gen_in_query(field="_id", values=idioms_ids)
-        idioms = stringify_docs(mongo.db.idioms.find(idioms_query))
-        return idioms
-    
-    except:
-        traceback.print_exc()
-        return idioms
+def create_user(args) -> dict:
+    general_user_role = UserRoleModel.query.filter_by(name="general").first()
+    user = UserModel(
+        args["username"], args.get("email"), args["password"], general_user_role.id
+    )
+    user.create()
+    return user
 
 
-def get_user_phrasal_verbs_count(user_id):
-    try:
-        query = gen_user_like_query(user_id)
-        return mongo.db.user_like_phrasal_verb.find(query).count()
-    except:
-        traceback.print_exc()
-        return None
+def get_users(args) -> list:
+    if args.get("username") is not None:
+        users = UserModel.query.filter(
+            UserModel.username.like(f"%{args.get('username')}%")
+        )
 
-def get_user_phrasal_verbs(user_id):
-    phrasal_verbs = []
-    try:
-        likes_query = gen_user_like_query(user_id)
-        phrasal_verbs_ids = []
-        for item in mongo.db.user_like_phrasal_verb.find(likes_query):
-            for key, value in item.items():
-                if key == "phrasalVerbId":
-                    phrasal_verbs_ids.append(ObjectId(value))
-        phrasal_verbs_query = gen_in_query(field="_id", values=phrasal_verbs_ids)
-        phrasal_verbs = stringify_docs(mongo.db.phrasal_verbs.find(phrasal_verbs_query))
-        return phrasal_verbs
-    
-    except:
-        traceback.print_exc()
-        return phrasal_verbs
+    elif args.get("email") is not None:
+        users = UserModel.query.filter(UserModel.email.like(f"%{args.get('email')}%"))
+    else:
+        users = UserModel.query.all()
+    return [user.serialize for user in users]
+
+
+def update_user(user, arg) -> None:
+    if arg["password"] is not None:
+        user.password = arg["password"]
+    if arg["email"] is not None:
+        user.email = arg["email"]
+    db.session.commit()
+
+
+def get_user_by_id(id_) -> dict:
+    user = UserModel.query.get(id_)
+    return user.serialize if user else None
+
+
+def get_user_by_username(username) -> dict:
+    user = UserModel.query.filter_by(username=username).first()
+    return user.serialize if user else None
+
+
+def get_user_by_email(email) -> dict:
+    user = UserModel.query.filter_by(email=email).first()
+    return user.serialize if user else None
+
+
+def delete_user(id_) -> None:
+    UserModel.query.filter_by(id=id_).delete()
+
+
+def check_user_info_duplicates(args) -> list:
+    result = []
+    if args.get("username") is not None:
+        if get_user_by_username(args.get("username")):
+            result.append("username")
+
+    if args.get("email") is not None:
+        if get_user_by_email(args.get("email")):
+            result.append("email")
+    return result
+
 
 parser_create = reqparse.RequestParser()
-parser_create.add_argument('name', type=str, required=True, location='form', help='Unique user name')
-parser_create.add_argument('email', type=str, location='form')
-parser_create.add_argument('password', type=str, required=True, location='form', help='Password')
-parser_create.add_argument('password_confirm', type=str, required=True, location='form', help='Confirm password')
+parser_create.add_argument("username", type=str, required=True, help="Unique user name")
+parser_create.add_argument("email", type=str)
+parser_create.add_argument("password", type=str, required=True, help="Password")
 
 parser_delete = reqparse.RequestParser()
-parser_delete.add_argument('ids', type=str, required=True, action='split')
+parser_delete.add_argument("ids", type=str, required=True, action="split")
 
-parser_header = reqparse.RequestParser()
-parser_header.add_argument('Authorization', type=str, required=True, location='headers')
+parser_auth = reqparse.RequestParser()
+parser_auth.add_argument("Authorization", type=str, location="headers")
 
-parser_likes = reqparse.RequestParser()
-parser_likes.add_argument('count', type=int, location='args')
+parser_search = reqparse.RequestParser()
+parser_search.add_argument("username", type=str, help="Unique user name")
+parser_search.add_argument("email", type=str)
 
-@api.route('/')
-class Users(CustomResource):
-    
-    @api.doc('list_users')
-    @api.expect(parser_header)
-    @token_required
+
+@api.route("/")
+class Users(Resource, CustomeResponse):
+    @api.expect(parser_search, parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
     def get(self, **kwargs):
-        '''List all users
-        
-        NOTE: Only for admin users
-        '''     
-        try:
-            if not self.is_admin(kwargs["user_info"]):
-                return self.send(status=403)   
-            users = _get_users()
-            return self.send(status=200, result=users)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+        """Get all users"""
+        if kwargs["auth_user"].is_admin():
+            args = parser_search.parse_args()
+            return self.send(response_type="SUCCESS", result=get_users(args))
+        return self.send(response_type="FORBIDDEN")
 
-    @api.doc('create a new user')
+    @api.doc("create a new user")
     @api.expect(parser_create)
+    @return_500_for_sever_error
     def post(self):
-        '''Create an user'''
-        try:
-            args = parser_create.parse_args()
-            name = args["name"]
-            email = args["email"]
-            password = args["password"]
-            password_confirm = args["password_confirm"]
-            
-            if password_confirm != password:
-                return self.send(status=400, message="Password and Confirm password have to be same")
-            if get_user(name=name):
-                return self.send(status=400, message="The given username alreay exists.")
-            
-            result = _create_user(name, email, password)
-            if result:
-                return self.send(status=201)
-            else:
-                return self.send(status=500)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
-  
-
-    @api.doc('delete_users')
-    @api.expect(parser_delete, parser_header)
-    @token_required
-    def delete(self, **kwargs):
-        '''Delete all users
-        
-        NOTE: Only for admin users or user owner
-        '''
-        try:
-            if not self.is_admin(kwargs["user_info"]):
-                return self.send(status=403)
-
-            args = parser_delete.parse_args()
-            result = delete_users(args['ids'])
-            if result:
-                return self.send(status=200)
-            return self.send(status=400, message="Check user ids")
-            
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
-
-@api.route('/<int:id_>')
-@api.param('id_', 'The user identifier')
-class User(CustomResource):
-    @api.doc('get_user')
-    def get(self, id_):
-        '''Fetch a user given its identifier'''
-           
-        user = get_user(id_=id_)
-        if user is None:
-            return self.send(status=200, result=None) 
-        user = json_serializer_all_datetime_keys(user)
-        return self.send(status=200, result=user)
+        """Create an user"""
+        args = parser_create.parse_args()
+        if duplicate_keys := check_user_info_duplicates(args):
+            return self.send(
+                response_type="FAIL",
+                additional_message=gen_dupilcate_keys_message(duplicate_keys),
+            )
+        result = create_user(args)
+        return self.send(response_type="CREATED", result=result.id)
 
 
-@api.route('/idioms')
-class UserLikesIdioms(CustomResource):
-    @api.doc('get_user_idioms_likes')
-    @api.expect(parser_header, parser_likes)
-    @token_required
-    def get(self, **kwargs):
-        try:
-            if kwargs["user_info"] is None:
-                return self.send(status=401)
-            user_id = kwargs["user_info"]["id"]
+@api.route("/<int:id_>")
+class User(Resource, CustomeResponse):
+    @api.doc("Get a user")
+    @api.expect(parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def get(self, id_, **kwargs):
+        if user := get_user_by_id(id_):
+            if kwargs["auth_user"].is_admin() or kwargs["auth_user"].id == id_:
+                return self.send(response_type="SUCCESS", result=user)
+        return self.send(response_type="NOT_FOUND")
 
-            args = parser_likes.parse_args()
-            if args['count'] == 1:
-                result = get_user_idioms_count(user_id)
-            else:
-                result = get_user_idioms(user_id)
-            return self.send(status=200, result=result)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+    @api.expect(parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def delete(self, id_, **kwargs):
+        if get_user_by_id(id_):
+            if kwargs["auth_user"].is_admin():
+                delete_user(id_)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")
 
-
-@api.route('/phrasal-verbs')
-class UserLikesPhrasalVerbs(CustomResource):
-    @api.doc('get_user_phrasal_verbs_likes')
-    @api.expect(parser_header, parser_likes)
-    @token_required
-    def get(self, **kwargs):
-        try:
-            if kwargs["user_info"] is None:
-                return self.send(status=401)
-            user_id = kwargs["user_info"]["id"]
-
-            args = parser_likes.parse_args()
-            if args['count'] == 1:
-                result = get_user_phrasal_verbs_count(user_id)
-            else:         
-                result = get_user_phrasal_verbs(user_id)
-            return self.send(status=200, result=result)
-        except:
-            traceback.print_exc()
-            return self.send(status=500)
+    @api.expect(parser_create, parser_auth)
+    @return_404_for_no_auth
+    @return_500_for_sever_error
+    def put(self, id_, **kwargs):
+        if get_user_by_id(id_):
+            if kwargs["auth_user"].is_admin():
+                args = parser_create.parse_args()
+                update_user(UserModel.query.get(id_), args)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")

@@ -2,7 +2,7 @@
 
 ### 주요 기능
 * Mysql(ORM)
-  * 유저(현재는 관리자만), 액션, 장소, 사진, 사진 타입, 할일 등 저장 
+  * 유저(현재는 관리자만), 액션, 장소, 사진, 사진 타입, 할일, 세션 등 저장 
 * Docker-compose
   * flask app(gunicorn), nginx, mysql 설정
 * Pytest 

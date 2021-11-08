@@ -1,6 +1,6 @@
 import traceback
 import werkzeug
-import os
+import re
 import sqlalchemy
 from datetime import datetime
 from flask_restplus import Namespace, reqparse, Resource
@@ -41,8 +41,18 @@ def upload_photo(file):
     return image_id
 
 
+def convert_to_dattime(string_datime):
+    try:
+        return datetime.strptime(string_datime, "%Y-%m-%d")
+    except:
+        return datetime.strptime(string_datime, "%Y-%m-%dT%H:%M:%S")
+
+
 def save_photo(photo_columns):
     try:
+        photo_columns["create_datetime"] = convert_to_dattime(
+            photo_columns["create_datetime"]
+        )
         photo = PhotoModel(**photo_columns)
         photo.actions = get_action_model_list_from_str_action_ids(
             photo_columns["action_ids"]
@@ -68,6 +78,7 @@ def update_photo(photo_id, photo_columns):
         photo.type_id = photo_columns["type_id"]
         photo.location_id = photo_columns["location_id"]
         photo.description = photo_columns["description"]
+        photo.create_datetime = convert_to_dattime(photo_columns["create_datetime"])
         photo.actions = get_action_model_list_from_str_action_ids(
             photo_columns["action_ids"]
         )
@@ -78,19 +89,23 @@ def update_photo(photo_id, photo_columns):
         return False, "Something went wrong"
 
 
+def convert_to_int_id_tuple(str_ids):
+    try:
+        if str_ids is not None and str_ids != "":
+            return (int(id_) for id_ in str_ids.split(","))
+        return False
+    except:
+        return False
+
+
 def get_photos(args):
     try:
         query = db.session.query(PhotoModel)
-        if args["type_ids"] != "":
-            type_ids = (int(type_id) for type_id in args["type_ids"].split(","))
+        if type_ids := convert_to_int_id_tuple(args["type_ids"]):
             query = query.filter(PhotoModel.type_id.in_(type_ids))
-        if args["location_ids"] != "":
-            location_ids = (
-                int(location_id) for location_id in args["location_ids"].split(",")
-            )
+        if location_ids := convert_to_int_id_tuple(args["location_ids"]):
             query = query.filter(PhotoModel.location_id.in_(location_ids))
-        if args["action_ids"] != "":
-            action_ids = (int(action_id) for action_id in args["action_ids"].split(","))
+        if action_ids := convert_to_int_id_tuple(args["action_ids"]):
             query = query.join(PhotoModel.actions).filter(
                 ActionModel.id.in_(action_ids)
             )
@@ -182,7 +197,6 @@ class Photos(Resource, CustomeResponse):
                 )
             if image_id := upload_photo(args["file"]):
                 args["image_id"] = image_id
-                args["create_datetime"] = datetime.now()
                 args["user_id"] = kwargs["auth_user"].id
                 result, message = save_photo(args)
                 if result:

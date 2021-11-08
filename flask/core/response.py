@@ -18,9 +18,9 @@ def return_401_for_no_auth(f):
 
             if session := get_session(token=auth_header):
                 user = UserModel.query.get(session["user_id"])
-
         if user is not None:
             return f(*args, **kwargs, auth_user=user)
+
         else:
             response = CustomeResponse()
             return response.send(response_type="NO_AUTH")

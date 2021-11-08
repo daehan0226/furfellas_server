@@ -44,10 +44,9 @@ def upload_photo(file):
 def save_photo(photo_columns):
     try:
         photo = PhotoModel(**photo_columns)
-        action_ids = photo_columns["action_ids"].split(",")
-        photo.actions = [
-            ActionModel.query.get(int(action_id)) for action_id in action_ids
-        ]
+        photo.actions = get_action_model_list_from_str_action_ids(
+            photo_columns["action_ids"]
+        )
         return photo.create(), ""
     except sqlalchemy.exc.IntegrityError as e:
         return False, "Wrong location id"
@@ -58,18 +57,39 @@ def save_photo(photo_columns):
         return False, "Something went wrong"
 
 
+def get_action_model_list_from_str_action_ids(str_action_ids):
+    action_ids = str_action_ids.split(",")
+    return [ActionModel.query.get(int(action_id)) for action_id in action_ids]
+
+
+def update_photo(photo_id, photo_columns):
+    try:
+        photo = PhotoModel.query.get(photo_id)
+        photo.type_id = photo_columns["type_id"]
+        photo.location_id = photo_columns["location_id"]
+        photo.description = photo_columns["description"]
+        photo.actions = get_action_model_list_from_str_action_ids(
+            photo_columns["action_ids"]
+        )
+        db.session.commit()
+        return True, ""
+    except:
+        traceback.print_exc()
+        return False, "Something went wrong"
+
+
 def get_photos(args):
     try:
         query = db.session.query(PhotoModel)
-        if args["type_ids"] is not None:
+        if args["type_ids"] != "":
             type_ids = (int(type_id) for type_id in args["type_ids"].split(","))
             query = query.filter(PhotoModel.type_id.in_(type_ids))
-        if args["location_ids"] is not None:
+        if args["location_ids"] != "":
             location_ids = (
                 int(location_id) for location_id in args["location_ids"].split(",")
             )
             query = query.filter(PhotoModel.location_id.in_(location_ids))
-        if args["action_ids"] is not None:
+        if args["action_ids"] != "":
             action_ids = (int(action_id) for action_id in args["action_ids"].split(","))
             query = query.join(PhotoModel.actions).filter(
                 ActionModel.id.in_(action_ids)
@@ -85,7 +105,6 @@ def get_photo(id):
     photo = PhotoModel.query.get(id)
     if photo:
         photo = photo.serialize
-        print(photo)
         return photo
     return None
 
@@ -117,7 +136,7 @@ parser_search.add_argument("page", type=str, help="Photo page", location="args")
 
 
 parser_create = reqparse.RequestParser()
-parser_create.add_argument("file", type=FileStorage, location="files", required=True)
+parser_create.add_argument("file", type=FileStorage, location="files")
 parser_create.add_argument(
     "type_id", type=int, location="form", help="Alone or together"
 )
@@ -157,6 +176,10 @@ class Photos(Resource, CustomeResponse):
         """Upload a photo to Onedrive"""
         if kwargs["auth_user"].is_admin():
             args = parser_create.parse_args()
+            if args.get("file") is None:
+                return self.send(
+                    response_type="FAIL", additional_message="No file to upload"
+                )
             if image_id := upload_photo(args["file"]):
                 args["image_id"] = image_id
                 args["create_datetime"] = datetime.now()
@@ -175,6 +198,22 @@ class Photo(Resource, CustomeResponse):
     def get(self, id_):
         if photo := get_photo(id_):
             return self.send(response_type="SUCCESS", result=photo)
+        return self.send(response_type="NOT_FOUND")
+
+    @api.doc("update a photo")
+    @api.expect(parser_create, parser_auth)
+    @return_401_for_no_auth
+    @return_500_for_sever_error
+    def put(self, id_, **kwargs):
+        """Upload a photo to Onedrive"""
+        if get_photo(id_):
+            if kwargs["auth_user"].is_admin():
+                args = parser_create.parse_args()
+                result, message = update_photo(id_, args)
+                if result:
+                    return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="FAIL", additional_message=message)
+            return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("delete a photo")

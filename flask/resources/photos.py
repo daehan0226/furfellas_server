@@ -104,9 +104,7 @@ def get_photos(args):
         if type_ids := convert_to_int_id_tuple(args["type_ids"]):
             query = query.filter(PhotoModel.type_id.in_(type_ids))
         if location_ids := convert_to_int_id_tuple(args["location_ids"]):
-            query = query.filter(
-                PhotoModel.location_id.in_(convert_to_int_id_tuple(location_ids))
-            )
+            query = query.filter(PhotoModel.location_id.in_(location_ids))
         if action_ids := convert_to_int_id_tuple(args["action_ids"]):
             query = query.join(PhotoModel.actions).filter(
                 ActionModel.id.in_(action_ids)

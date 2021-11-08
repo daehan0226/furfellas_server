@@ -42,7 +42,10 @@ def upload_photo(file):
 
 
 def convert_to_dattime(string_datime):
-    return datetime.strptime(string_datime, "%Y-%m-%d")
+    try:
+        return datetime.strptime(string_datime, "%Y-%m-%d")
+    except:
+        return datetime.strptime(string_datime, "%Y-%m-%dT%H:%M:%S")
 
 
 def save_photo(photo_columns):

@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, url_for
 from flask_restplus import Api
 from .photos import api as photos
 from .actions import api as actions
@@ -11,7 +11,18 @@ from .photo_types import api as photo_types
 from .user_roles import api as user_roles
 
 blueprint = Blueprint("api", __name__)
-api = Api(blueprint, title="Fur fellas API", version="1.0", description="")
+
+class CustomApi(Api):
+    @property
+    def specs_url(self):
+        '''
+        The Swagger specifications absolute url (ie. `swagger.json`)
+
+        :rtype: str
+        '''
+        return url_for(self.endpoint('specs'), _external=False)
+
+api = CustomApi(blueprint, title="Fur fellas API", version="1.0", description="")
 
 api.add_namespace(photos)
 api.add_namespace(photo_types)

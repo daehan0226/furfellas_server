@@ -1,8 +1,8 @@
 version: "3"
 
 services:
-  flask_app:
-    container_name: furfellas_server
+  furfellas_app_server:
+    container_name: furfellas_app_server
     restart: always
     build: ./flask
     volumes:
@@ -18,4 +18,4 @@ services:
     ports:
       - "8099:80"
     depends_on:
-      - flask_app
+      - furfellas_app_server

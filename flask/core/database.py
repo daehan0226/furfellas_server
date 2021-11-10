@@ -18,7 +18,7 @@ association_table = Table(
 )
 
 
-def get_db_session():
-    engine = create_engine(os.getenv("SQLALCHEMY_DATABASE_URI"))
+def get_db_session(db_url):
+    engine = create_engine(db_url)
     session_factory = sessionmaker(bind=engine)
     return scoped_session(session_factory)

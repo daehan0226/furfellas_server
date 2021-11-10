@@ -2,7 +2,6 @@ import os
 import time
 import traceback
 from datetime import datetime
-from threading import Thread
 from dotenv import load_dotenv
 
 from dateutil.relativedelta import relativedelta
@@ -41,16 +40,10 @@ def get_session(user_id=None, token=None):
     return session.serialize if session else None
 
 
-def expire_old_session_job():
-    thread = Thread(target=expire_old_session)
-    thread.daemon = True
-    thread.start()
-
-
-def expire_old_session():
+def expire_old_session(db_url):
     while True:
         try:
-            db_scoped_session = get_db_session()
+            db_scoped_session = get_db_session(db_url)
             db_session = db_scoped_session()
             sessions = db_session.query(SessionModel).all()
             for session in sessions:
@@ -60,8 +53,8 @@ def expire_old_session():
                 if expire_datetime < datetime.now():
                     db_session.query(SessionModel).filter_by(id=session.id).delete()
                     db_session.commit()
-            time.sleep(SESSION_CHECK_TIME_SECONDS)
             db_scoped_session.remove()
+            time.sleep(SESSION_CHECK_TIME_SECONDS)
         except:
             traceback.print_exc()
             break

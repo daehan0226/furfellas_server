@@ -55,5 +55,7 @@ class Photo(BaseModel):
             "create_datetime": self.create_datetime.isoformat(),
             "upload_datetime": self.upload_datetime.isoformat(),
             "location": Location.query.get(self.location_id).serialize,
+            "original": f"https://drive.google.com/thumbnail?id={self.image_id}",
+            "thumbnail": f"https://drive.google.com/uc?export=view&id={self.image_id}",
             "actions": [action.serialize for action in self.actions],
         }

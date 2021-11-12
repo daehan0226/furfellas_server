@@ -12,13 +12,19 @@ def get_todos(**search_filters):
     query = db.session.query(TodoChildren)
     if search_filters["parent_id"] is not None:
         query = query.filter(TodoChildren.parent_id == search_filters["parent_id"])
-    if search_filters["datetime_from"] is not None:
+    if (
+        search_filters["datetime_from"] is not None
+        and search_filters["datetime_from"] != ""
+    ):
         convert_to_datetime(search_filters["datetime_from"])
         query = query.filter(
             TodoChildren.datetime
             >= convert_to_datetime(search_filters["datetime_from"])
         )
-    if search_filters["datetime_to"] is not None:
+    if (
+        search_filters["datetime_to"] is not None
+        and search_filters["datetime_to"] != ""
+    ):
         query = query.filter(
             TodoChildren.datetime <= convert_to_datetime(search_filters["datetime_to"])
         )

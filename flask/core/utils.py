@@ -14,7 +14,10 @@ def random_string_digits(length):
 
 
 def convert_to_datetime(string_datime):
-    try:
-        return datetime.strptime(string_datime, "%Y-%m-%d")
-    except:
-        return datetime.strptime(string_datime, "%Y-%m-%dT%H:%M:%S")
+
+    for fmt in ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+        try:
+            return datetime.strptime(string_datime, fmt)
+        except ValueError:
+            pass
+    raise ValueError("no valid date format found")

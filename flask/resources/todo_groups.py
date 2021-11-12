@@ -1,4 +1,3 @@
-from datetime import datetime
 from flask_restplus import Namespace, reqparse, Resource
 
 
@@ -8,13 +7,10 @@ from core.response import (
     return_500_for_sever_error,
     return_401_for_no_auth,
 )
+from core.utils import convert_to_datetime
 
 
 api = Namespace("todo-groups", description="todo groups related operations")
-
-
-def convert_to_datetime(datetime_, format="%Y-%m-%d %H:%M:%S"):
-    return datetime.strptime(datetime_, format)
 
 
 def create_todo_group(user_id, arg):
@@ -71,7 +67,7 @@ class TodoGroups(Resource, CustomeResponse):
         """ "Get all todo-groups"""
         return self.send(response_type="SUCCESS", result=get_todo_groups())
 
-    @api.expect(parser_post)
+    @api.expect(parser_post, parser_auth)
     @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
@@ -93,6 +89,7 @@ class TodoGroup(Resource, CustomeResponse):
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("Delete a todo")
+    @api.expect(parser_auth)
     @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):

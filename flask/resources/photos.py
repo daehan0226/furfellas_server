@@ -15,6 +15,7 @@ from core.response import (
     return_500_for_sever_error,
     return_401_for_no_auth,
 )
+from core.utils import convert_to_datetime
 
 
 api = Namespace("photos", description="Photos related operations")
@@ -41,16 +42,9 @@ def upload_photo(file):
     return image_id
 
 
-def convert_to_dattime(string_datime):
-    try:
-        return datetime.strptime(string_datime, "%Y-%m-%d")
-    except:
-        return datetime.strptime(string_datime, "%Y-%m-%dT%H:%M:%S")
-
-
 def save_photo(photo_columns):
     try:
-        photo_columns["create_datetime"] = convert_to_dattime(
+        photo_columns["create_datetime"] = convert_to_datetime(
             photo_columns["create_datetime"]
         )
         photo = PhotoModel(**photo_columns)
@@ -78,7 +72,7 @@ def update_photo(photo_id, photo_columns):
         photo.type_id = photo_columns["type_id"]
         photo.location_id = photo_columns["location_id"]
         photo.description = photo_columns["description"]
-        photo.create_datetime = convert_to_dattime(photo_columns["create_datetime"])
+        photo.create_datetime = convert_to_datetime(photo_columns["create_datetime"])
         photo.actions = get_action_model_list_from_str_action_ids(
             photo_columns["action_ids"]
         )

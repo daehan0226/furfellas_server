@@ -88,6 +88,20 @@ class TodoGroup(Resource, CustomeResponse):
             return self.send(response_type="SUCCESS", result=todo)
         return self.send(response_type="NOT_FOUND")
 
+    @api.doc("Delete a todo group and recreate todo group")
+    @api.expect(parser_auth, parser_post)
+    @return_401_for_no_auth
+    @return_500_for_sever_error
+    def put(self, id_, **kwargs):
+        if get_todo_group(id_):
+            if kwargs["auth_user"].is_admin():
+                if delete_todo_group(id_):
+                    args = parser_post.parse_args()
+                    result = create_todo_group(kwargs["auth_user"].id, args)
+                    return self.send(response_type="CREATED", result=result.id)
+                return self.send(response_type="FORBIDDEN")
+        return self.send(response_type="NOT_FOUND")
+
     @api.doc("Delete a todo")
     @api.expect(parser_auth)
     @return_401_for_no_auth

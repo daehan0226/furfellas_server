@@ -1,5 +1,5 @@
 from flask_restplus import Namespace, reqparse, Resource
-
+from sqlalchemy import asc
 from core.models import TodoChildren
 from core.response import CustomeResponse, return_500_for_sever_error
 from core.database import db
@@ -28,6 +28,7 @@ def get_todos(**search_filters):
         query = query.filter(
             TodoChildren.datetime <= convert_to_datetime(search_filters["datetime_to"])
         )
+    query = query.order_by(asc(TodoChildren.datetime))
     todos = query.all()
     return [todo.serialize for todo in todos]
 

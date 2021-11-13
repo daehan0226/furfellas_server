@@ -1,6 +1,6 @@
 from flask_restplus import Namespace, reqparse, Resource
 
-
+from core.database import db
 from core.models import TodoParent, TodoChildren
 from core.response import (
     CustomeResponse,
@@ -42,7 +42,8 @@ def get_todo_group(id):
 
 
 def delete_todo_group(id):
-    return TodoParent.query.filter_by(id=id).delete()
+    TodoParent.query.filter_by(id=id).delete()
+    db.session.commit()
 
 
 def get_todo_groups():
@@ -95,11 +96,11 @@ class TodoGroup(Resource, CustomeResponse):
     def put(self, id_, **kwargs):
         if get_todo_group(id_):
             if kwargs["auth_user"].is_admin():
-                if delete_todo_group(id_):
-                    args = parser_post.parse_args()
-                    result = create_todo_group(kwargs["auth_user"].id, args)
-                    return self.send(response_type="CREATED", result=result.id)
-                return self.send(response_type="FORBIDDEN")
+                delete_todo_group(id_)
+                args = parser_post.parse_args()
+                result = create_todo_group(kwargs["auth_user"].id, args)
+                return self.send(response_type="CREATED", result=result.id)
+            return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("Delete a todo")
@@ -109,7 +110,7 @@ class TodoGroup(Resource, CustomeResponse):
     def delete(self, id_, **kwargs):
         if get_todo_group(id_):
             if kwargs["auth_user"].is_admin():
-                if delete_todo_group(id_):
-                    return self.send(response_type="NO_CONTENT")
-                return self.send(response_type="FORBIDDEN")
+                delete_todo_group(id_)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")

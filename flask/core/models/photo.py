@@ -51,7 +51,7 @@ class Photo(BaseModel):
             "type": PhotoType.query.get(self.type_id).serialize,
             "description": self.description,
             "image_id": self.image_id,
-            "user_id": User.query.get(self.user_id).serialize,
+            "user": User.query.get(self.user_id).serialize,
             "create_datetime": self.create_datetime.isoformat(),
             "upload_datetime": self.upload_datetime.isoformat(),
             "location": Location.query.get(self.location_id).serialize,

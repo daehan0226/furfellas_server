@@ -73,7 +73,6 @@ def get_pet_model_list_from_str_action_ids(str_pet_ids):
 def update_photo(photo_id, photo_columns):
     try:
         photo = PhotoModel.query.get(photo_id)
-        photo.type_id = photo_columns["type_id"]
         photo.location_id = photo_columns["location_id"]
         photo.description = photo_columns["description"]
         photo.create_datetime = convert_to_datetime(photo_columns["create_datetime"])
@@ -100,8 +99,6 @@ def convert_to_int_id_tuple(str_ids):
 def get_photos(args):
     try:
         query = db.session.query(PhotoModel)
-        if type_ids := convert_to_int_id_tuple(args["type_ids"]):
-            query = query.filter(PhotoModel.type_id.in_(type_ids))
         if location_ids := convert_to_int_id_tuple(args["location_ids"]):
             query = query.filter(PhotoModel.location_id.in_(location_ids))
         if action_ids := convert_to_int_id_tuple(args["action_ids"]):
@@ -131,9 +128,6 @@ def delete_photo(id):
 
 
 parser_search = reqparse.RequestParser()
-parser_search.add_argument(
-    "type_ids", type=str, location="args", help="Alone or together"
-)
 parser_search.add_argument("action_ids", type=str, location="args", help="action ids")
 
 parser_search.add_argument("pet_ids", type=str, location="args", help="pet ids")
@@ -154,9 +148,6 @@ parser_search.add_argument("page", type=str, help="Photo page", location="args")
 
 parser_create = reqparse.RequestParser()
 parser_create.add_argument("file", type=FileStorage, location="files")
-parser_create.add_argument(
-    "type_id", type=int, location="form", help="Alone or together"
-)
 parser_create.add_argument("action_ids", type=str, location="form", help="action ids")
 parser_create.add_argument("pet_ids", type=str, location="form", help="pet ids")
 parser_create.add_argument(

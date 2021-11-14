@@ -6,7 +6,7 @@ from werkzeug.datastructures import FileStorage
 from apiclient.http import MediaFileUpload
 
 from core.database import db
-from core.models import Photo as PhotoModel, Action as ActionModel
+from core.models import Photo as PhotoModel, Action as ActionModel, Pet as PetModel
 from core.google_drive_api import get_service, get_folder_id
 from core.response import (
     CustomeResponse,
@@ -49,6 +49,7 @@ def save_photo(photo_columns):
         photo.actions = get_action_model_list_from_str_action_ids(
             photo_columns["action_ids"]
         )
+        photo.actions = get_pet_model_list_from_str_action_ids(photo_columns["pet_ids"])
         return photo.create(), ""
     except sqlalchemy.exc.IntegrityError as e:
         return False, "Wrong location id"
@@ -64,6 +65,11 @@ def get_action_model_list_from_str_action_ids(str_action_ids):
     return [ActionModel.query.get(int(action_id)) for action_id in action_ids]
 
 
+def get_pet_model_list_from_str_action_ids(str_pet_ids):
+    pet_ids = str_pet_ids.split(",")
+    return [PetModel.query.get(int(pet_id)) for pet_id in pet_ids]
+
+
 def update_photo(photo_id, photo_columns):
     try:
         photo = PhotoModel.query.get(photo_id)
@@ -74,6 +80,7 @@ def update_photo(photo_id, photo_columns):
         photo.actions = get_action_model_list_from_str_action_ids(
             photo_columns["action_ids"]
         )
+        photo.pets = get_pet_model_list_from_str_action_ids(photo_columns["pet_ids"])
         db.session.commit()
         return True, ""
     except:
@@ -101,6 +108,8 @@ def get_photos(args):
             query = query.join(PhotoModel.actions).filter(
                 ActionModel.id.in_(action_ids)
             )
+        if pet_ids := convert_to_int_id_tuple(args["pet_ids"]):
+            query = query.join(PhotoModel.pets).filter(PetModel.id.in_(pet_ids))
         photos = query.all()
         return [photo.serialize for photo in photos]
     except:
@@ -125,11 +134,11 @@ parser_search = reqparse.RequestParser()
 parser_search.add_argument(
     "type_ids", type=str, location="args", help="Alone or together"
 )
+parser_search.add_argument("action_ids", type=str, location="args", help="action ids")
+
+parser_search.add_argument("pet_ids", type=str, location="args", help="pet ids")
 parser_search.add_argument(
-    "action_ids", type=str, location="args", help="action ids or new actions"
-)
-parser_search.add_argument(
-    "location_ids", type=str, help="location ids or new locations", location="args"
+    "location_ids", type=str, help="location ids", location="args"
 )
 parser_search.add_argument(
     "start_datetime", type=str, help="search start date", location="args"
@@ -148,11 +157,10 @@ parser_create.add_argument("file", type=FileStorage, location="files")
 parser_create.add_argument(
     "type_id", type=int, location="form", help="Alone or together"
 )
+parser_create.add_argument("action_ids", type=str, location="form", help="action ids")
+parser_create.add_argument("pet_ids", type=str, location="form", help="pet ids")
 parser_create.add_argument(
-    "action_ids", type=str, location="form", help="action ids or new actions"
-)
-parser_create.add_argument(
-    "location_id", type=int, help="location ids or new locations", location="form"
+    "location_id", type=int, help="location ids", location="form"
 )
 parser_create.add_argument(
     "description", type=str, help="photo description", location="form"

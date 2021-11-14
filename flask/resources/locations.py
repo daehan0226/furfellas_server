@@ -47,6 +47,7 @@ def update_location(id_, name):
 
 def delete_location(id_):
     LocationModel.query.filter_by(id=id_).delete()
+    db.session.commit()
 
 
 parser_auth = reqparse.RequestParser()

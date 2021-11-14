@@ -1,6 +1,10 @@
 from datetime import datetime
 from sqlalchemy.orm import relationship
-from core.database import db, association_table
+from core.database import (
+    db,
+    association_table_photo_action,
+    association_table_photo_pet,
+)
 from core.models import BaseModel
 
 
@@ -18,7 +22,11 @@ class Photo(BaseModel):
     upload_datetime = db.Column(db.DateTime, default=datetime.now())
 
     actions = relationship(
-        "Action", secondary=association_table, back_populates="photos"
+        "Action", secondary=association_table_photo_action, back_populates="photos"
+    )
+
+    pets = relationship(
+        "Pet", secondary=association_table_photo_pet, back_populates="photos"
     )
 
     def __init__(self, **columns):
@@ -58,4 +66,5 @@ class Photo(BaseModel):
             "thumbnail": f"https://drive.google.com/thumbnail?id={self.image_id}",
             "original": f"https://drive.google.com/uc?export=view&id={self.image_id}",
             "actions": [action.serialize for action in self.actions],
+            "pets": [pet.serialize for pet in self.pets],
         }

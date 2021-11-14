@@ -1,5 +1,4 @@
 from core.database import db
-from sqlalchemy.orm import relationship, backref
 from core.models import BaseModel
 
 

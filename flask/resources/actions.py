@@ -49,6 +49,7 @@ def update_action(id_, name):
 
 def delete_action(id_):
     ActionModel.query.filter_by(id=id_).delete()
+    db.session.commit()
 
 
 parser_auth = reqparse.RequestParser()

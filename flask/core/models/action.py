@@ -1,4 +1,4 @@
-from core.database import db, association_table
+from core.database import db, association_table_photo_action
 from sqlalchemy.orm import relationship
 from core.models import BaseModel
 
@@ -9,7 +9,7 @@ class Action(BaseModel):
     name = db.Column(db.String(200), unique=True, nullable=False)
 
     photos = relationship(
-        "Photo", secondary=association_table, back_populates="actions"
+        "Photo", secondary=association_table_photo_action, back_populates="actions"
     )
 
     def __init__(self, name):

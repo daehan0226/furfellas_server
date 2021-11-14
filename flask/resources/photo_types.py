@@ -35,6 +35,7 @@ def update_photo_type(id, name):
 
 def delete_photo_type(id):
     PhotoTypeModel.query.filter_by(id=id).delete()
+    db.session.commit()
 
 
 def get_photo_types():

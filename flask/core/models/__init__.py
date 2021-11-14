@@ -7,3 +7,4 @@ from .user import User
 from .session import Session
 from .photo import Photo
 from .photo_type import PhotoType
+from .pet import Pet

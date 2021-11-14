@@ -10,11 +10,19 @@ db = SQLAlchemy(model_class=Base)
 
 metadata = Base.metadata
 
-association_table = Table(
+association_table_photo_action = Table(
     "photo_action",
     Base.metadata,
-    Column("photo_id", Integer, ForeignKey("photo.id")),
-    Column("action_id", Integer, ForeignKey("action.id")),
+    Column("photo_id", Integer, ForeignKey("photo.id", ondelete="CASCADE")),
+    Column("action_id", Integer, ForeignKey("action.id", ondelete="CASCADE")),
+)
+
+
+association_table_photo_pet = Table(
+    "photo_pet",
+    Base.metadata,
+    Column("photo_id", Integer, ForeignKey("photo.id", ondelete="CASCADE")),
+    Column("pet_id", Integer, ForeignKey("pet.id", ondelete="CASCADE")),
 )
 
 

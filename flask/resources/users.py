@@ -59,6 +59,7 @@ def get_user_by_email(email) -> dict:
 
 def delete_user(id_) -> None:
     UserModel.query.filter_by(id=id_).delete()
+    db.session.commit()
 
 
 def check_user_info_duplicates(args) -> list:

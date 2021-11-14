@@ -1,8 +1,6 @@
 import traceback
 import werkzeug
-import re
 import sqlalchemy
-from datetime import datetime
 from flask_restplus import Namespace, reqparse, Resource
 from werkzeug.datastructures import FileStorage
 from apiclient.http import MediaFileUpload
@@ -120,6 +118,7 @@ def get_photo(id):
 
 def delete_photo(id):
     PhotoModel.query.filter_by(id=id).delete()
+    db.session.commit()
 
 
 parser_search = reqparse.RequestParser()

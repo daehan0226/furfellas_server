@@ -49,7 +49,7 @@ def save_photo(photo_columns):
         photo.actions = get_action_model_list_from_str_action_ids(
             photo_columns["action_ids"]
         )
-        photo.actions = get_pet_model_list_from_str_action_ids(photo_columns["pet_ids"])
+        photo.pets = get_pet_model_list_from_str_action_ids(photo_columns["pet_ids"])
         return photo.create(), ""
     except sqlalchemy.exc.IntegrityError as e:
         return False, "Wrong location id"

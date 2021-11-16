@@ -39,13 +39,19 @@ class Pet(BaseModel):
     @property
     def serialize(self):
         """Return object data in easily serializable format"""
+        from core.models import Photo
+
+        photo_url = ""
+        if self.photo_id:
+            image_id = Photo.query.get(self.photo_id).image_id
+            photo_url = f"https://drive.google.com/uc?export=view&id={image_id}"
 
         return {
             "id": self.id,
             "name": self.name,
             "weight": self.weight,
             "intro": self.intro,
-            "photo_id": self.photo_id,
+            "photo": {"id": self.photo_id, "url": photo_url},
             "birthday": self.birthday.isoformat(),
             "color": self.color,
         }

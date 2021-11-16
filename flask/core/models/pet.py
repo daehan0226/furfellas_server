@@ -19,20 +19,41 @@ class Pet(BaseModel):
     birthday = db.Column(db.DateTime)
     color = db.Column(db.String(6))
     intro = db.Column(db.String(1000))
+    photo_id = db.Column(db.Integer, db.ForeignKey("photo.id", ondelete="SET NULL"))
 
     photos = relationship(
         "Photo", secondary=association_table_photo_pet, back_populates="pets"
     )
 
-    def __init__(self, name, weight, birthday, color, intro):
+    def __init__(self, name, weight, birthday, color, intro, photo_id):
         self.name = name
         self.weight = weight
         self.birthday = birthday
         self.color = color
         self.intro = intro
+        self.photo_id = photo_id
 
     def __repr__(self):
         return self._repr(id=self.id, name=self.name)
+
+    @property
+    def serialize(self):
+        """Return object data in easily serializable format"""
+        from core.models import Photo
+
+        photo_url = ""
+        if self.photo_id:
+            image_id = Photo.query.get(self.photo_id).image_id
+            photo_url = f"https://drive.google.com/uc?export=view&id={image_id}"
+
+        return {
+            "id": self.id,
+            "name": self.name,
+            "weight": self.weight,
+            "photo_url": photo_url,
+            "birthday": self.birthday.isoformat(),
+            "color": self.color,
+        }
 
 
 @event.listens_for(Pet.__table__, "after_create")
@@ -44,6 +65,7 @@ def insert_initial_values(*args, **kwargs):
             os.getenv("SEVI_BIRTHDAY"),
             os.getenv("SEVI_COLOR"),
             os.getenv("SEVI_INTRO"),
+            None,
         ),
         Pet(
             os.getenv("ALBI_NAME"),
@@ -51,6 +73,7 @@ def insert_initial_values(*args, **kwargs):
             os.getenv("ALBI_BIRTHDAY"),
             os.getenv("ALBI_COLOR"),
             os.getenv("ALBI_INTRO"),
+            None,
         ),
     ]
     db.session.add_all(initial_pets)

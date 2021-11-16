@@ -17,6 +17,7 @@ parser_post.add_argument("weight", type=int, required=True)
 parser_post.add_argument("birthday", type=str, required=True)
 parser_post.add_argument("color", type=str, help="CSS HEX", required=True)
 parser_post.add_argument("intro", type=str, required=True)
+parser_post.add_argument("photo_id", type=str)
 
 parser_search = reqparse.RequestParser()
 parser_search.add_argument("name", type=str, help="pet name")

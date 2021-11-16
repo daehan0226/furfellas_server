@@ -107,6 +107,16 @@ def get_photos(args):
             )
         if pet_ids := convert_to_int_id_tuple(args["pet_ids"]):
             query = query.join(PhotoModel.pets).filter(PetModel.id.in_(pet_ids))
+        if args["start_datetime"] is not None and args["start_datetime"] != "":
+            convert_to_datetime(args["start_datetime"])
+            query = query.filter(
+                PhotoModel.create_datetime
+                >= convert_to_datetime(args["start_datetime"])
+            )
+        if args["end_datetime"] is not None and args["end_datetime"] != "":
+            query = query.filter(
+                PhotoModel.create_datetime <= convert_to_datetime(args["end_datetime"])
+            )
         photos = query.all()
         return [photo.serialize for photo in photos]
     except:

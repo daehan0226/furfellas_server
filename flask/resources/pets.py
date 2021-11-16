@@ -32,12 +32,13 @@ def creat_pet(pet_columns):
         return False, f"Pet name '{pet['name']}' already exsits."
 
 
-def get_pets(name=None) -> list:
-    if name is not None:
-        pets = PetModel.query.filter(PetModel.name.like(f"%{name}%"))
-    else:
-        pets = PetModel.query.all()
-    return [pet.serialize for pet in pets]
+def get_pets() -> list:
+    return [pet.serialize for pet in PetModel.query.all()]
+
+
+def get_pet_by_name(name) -> dict:
+    pet = PetModel.query.filter_by(name=name).first()
+    return pet.serialize if pet else None
 
 
 def get_pet(id_) -> dict:
@@ -67,7 +68,13 @@ class Pets(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self):
         args = parser_search.parse_args()
-        return self.send(response_type="SUCCESS", result=get_pets(name=args["name"]))
+        result = None
+        if args.get("name") is None:
+            result = get_pets()
+        else:
+            result = get_pet_by_name(args["name"])
+
+        return self.send(response_type="SUCCESS", result=result)
 
     @api.doc("create a new pet")
     @api.expect(parser_post, parser_auth)

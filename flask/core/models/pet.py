@@ -50,6 +50,7 @@ class Pet(BaseModel):
             "id": self.id,
             "name": self.name,
             "weight": self.weight,
+            "intro": self.intro,
             "photo_url": photo_url,
             "birthday": self.birthday.isoformat(),
             "color": self.color,

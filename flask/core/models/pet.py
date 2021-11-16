@@ -18,6 +18,7 @@ class Pet(BaseModel):
     weight = db.Column(db.Integer())
     birthday = db.Column(db.DateTime)
     color = db.Column(db.String(6))
+    sex = db.Column(db.String(1))
     intro = db.Column(db.String(1000))
     photo_id = db.Column(db.Integer, db.ForeignKey("photo.id", ondelete="SET NULL"))
 
@@ -25,11 +26,12 @@ class Pet(BaseModel):
         "Photo", secondary=association_table_photo_pet, back_populates="pets"
     )
 
-    def __init__(self, name, weight, birthday, color, intro, photo_id):
+    def __init__(self, name, weight, birthday, color, sex, intro, photo_id):
         self.name = name
         self.weight = weight
         self.birthday = birthday
         self.color = color
+        self.sex = sex
         self.intro = intro
         self.photo_id = photo_id
 
@@ -51,6 +53,7 @@ class Pet(BaseModel):
             "name": self.name,
             "weight": self.weight,
             "intro": self.intro,
+            "sex": self.sex,
             "photo": {"id": self.photo_id, "url": photo_url},
             "birthday": self.birthday.isoformat(),
             "color": self.color,
@@ -65,6 +68,7 @@ def insert_initial_values(*args, **kwargs):
             os.getenv("SEVI_WEIGHT"),
             os.getenv("SEVI_BIRTHDAY"),
             os.getenv("SEVI_COLOR"),
+            os.getenv("SEVI_SEX"),
             os.getenv("SEVI_INTRO"),
             None,
         ),
@@ -73,6 +77,7 @@ def insert_initial_values(*args, **kwargs):
             os.getenv("ALBI_WEIGHT"),
             os.getenv("ALBI_BIRTHDAY"),
             os.getenv("ALBI_COLOR"),
+            os.getenv("ALBI_SEX"),
             os.getenv("ALBI_INTRO"),
             None,
         ),

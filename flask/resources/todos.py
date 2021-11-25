@@ -1,5 +1,6 @@
 from flask_restplus import Namespace, reqparse, Resource
 from sqlalchemy import asc
+from dateutil.relativedelta import relativedelta
 from core.models import TodoChildren
 from core.response import CustomeResponse, return_500_for_sever_error
 from core.database import db
@@ -26,7 +27,10 @@ def get_todos(**search_filters):
         and search_filters["datetime_to"] != ""
     ):
         query = query.filter(
-            TodoChildren.datetime <= convert_to_datetime(search_filters["datetime_to"])
+            TodoChildren.datetime
+            <= convert_to_datetime(
+                search_filters["datetime_to"] + relativedelta(days=1)
+            )
         )
     query = query.order_by(asc(TodoChildren.datetime))
     todos = query.all()

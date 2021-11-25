@@ -1,6 +1,7 @@
 import traceback
 import werkzeug
 import sqlalchemy
+from dateutil.relativedelta import relativedelta
 from flask_restplus import Namespace, reqparse, Resource
 from werkzeug.datastructures import FileStorage
 from apiclient.http import MediaFileUpload
@@ -115,7 +116,8 @@ def get_photos(args):
             )
         if args["end_datetime"] is not None and args["end_datetime"] != "":
             query = query.filter(
-                PhotoModel.create_datetime <= convert_to_datetime(args["end_datetime"])
+                PhotoModel.create_datetime
+                <= (convert_to_datetime(args["end_datetime"]) + relativedelta(days=1))
             )
         photos = query.all()
         return [photo.serialize for photo in photos]

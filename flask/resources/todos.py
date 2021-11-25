@@ -28,8 +28,9 @@ def get_todos(**search_filters):
     ):
         query = query.filter(
             TodoChildren.datetime
-            <= convert_to_datetime(
-                search_filters["datetime_to"] + relativedelta(days=1)
+            <= (
+                convert_to_datetime(search_filters["datetime_to"])
+                + relativedelta(days=1)
             )
         )
     query = query.order_by(asc(TodoChildren.datetime))

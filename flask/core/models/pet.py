@@ -5,6 +5,7 @@ from sqlalchemy import event
 from sqlalchemy.orm import relationship
 from core.database import db, association_table_photo_pet
 from core.models import BaseModel
+from core.utils import convert_to_datetime
 
 APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
 dotenv_path = os.path.join(APP_ROOT, ".env")
@@ -66,7 +67,7 @@ def insert_initial_values(*args, **kwargs):
         Pet(
             os.getenv("SEVI_NAME"),
             os.getenv("SEVI_WEIGHT"),
-            os.getenv("SEVI_BIRTHDAY"),
+            convert_to_datetime(os.getenv("SEVI_BIRTHDAY")),
             os.getenv("SEVI_COLOR"),
             os.getenv("SEVI_SEX"),
             os.getenv("SEVI_INTRO"),
@@ -75,7 +76,7 @@ def insert_initial_values(*args, **kwargs):
         Pet(
             os.getenv("ALBI_NAME"),
             os.getenv("ALBI_WEIGHT"),
-            os.getenv("ALBI_BIRTHDAY"),
+            convert_to_datetime(os.getenv("ALBI_BIRTHDAY")),
             os.getenv("ALBI_COLOR"),
             os.getenv("ALBI_SEX"),
             os.getenv("ALBI_INTRO"),

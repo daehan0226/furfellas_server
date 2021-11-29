@@ -1,5 +1,4 @@
-from flask_restplus import Namespace, reqparse
-from flask_restplus import Resource
+from flask_restplus import Namespace, reqparse, Resource
 from core.response import (
     return_500_for_sever_error,
     return_401_for_no_auth,

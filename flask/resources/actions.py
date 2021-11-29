@@ -36,19 +36,9 @@ def get_actions(name=None) -> list:
     return [action.serialize for action in actions]
 
 
-def get_action(id_) -> dict:
-    action = ActionModel.query.get(id_)
-    return action.serialize if action else None
-
-
 def update_action(id_, name):
     action = ActionModel.query.get(id_)
     action.name = name
-    db.session.commit()
-
-
-def delete_action(id_):
-    ActionModel.query.filter_by(id=id_).delete()
     db.session.commit()
 
 
@@ -84,8 +74,8 @@ class Actions(Resource, CustomeResponse):
 class Action(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
-        if action := get_action(id_):
-            return self.send(response_type="SUCCESS", result=action)
+        if action := ActionModel.get_by_id(id_):
+            return self.send(response_type="SUCCESS", result=action.serialize)
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("update action name")
@@ -93,7 +83,7 @@ class Action(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
-        if get_action(id_):
+        if ActionModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
                 update_action(id_, args["name"])
@@ -106,9 +96,9 @@ class Action(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        if get_action(id_):
+        if ActionModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                delete_action(id_)
+                ActionModel.delete_by_id(id_)
                 return self.send(response_type="NO_CONTENT")
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")

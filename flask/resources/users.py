@@ -41,11 +41,6 @@ def update_user(user, arg) -> None:
     db.session.commit()
 
 
-def get_user_by_id(id_) -> dict:
-    user = UserModel.query.get(id_)
-    return user.serialize if user else None
-
-
 def get_user_by_username(username) -> dict:
     user = UserModel.query.filter_by(username=username).first()
     return user.serialize if user else None
@@ -54,11 +49,6 @@ def get_user_by_username(username) -> dict:
 def get_user_by_email(email) -> dict:
     user = UserModel.query.filter_by(email=email).first()
     return user.serialize if user else None
-
-
-def delete_user(id_) -> None:
-    UserModel.query.filter_by(id=id_).delete()
-    db.session.commit()
 
 
 def check_user_info_duplicates(args) -> list:
@@ -123,18 +113,18 @@ class User(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def get(self, id_, **kwargs):
-        if user := get_user_by_id(id_):
+        if user := UserModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin() or kwargs["auth_user"].id == id_:
-                return self.send(response_type="SUCCESS", result=user)
+                return self.send(response_type="SUCCESS", result=user.serialize)
         return self.send(response_type="NOT_FOUND")
 
     @api.expect(parser_auth)
     @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        if get_user_by_id(id_):
+        if UserModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                delete_user(id_)
+                UserModel.delete_by_id(id_)
                 return self.send(response_type="NO_CONTENT")
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")
@@ -143,7 +133,7 @@ class User(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
-        if get_user_by_id(id_):
+        if UserModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_create.parse_args()
                 update_user(UserModel.query.get(id_), args)

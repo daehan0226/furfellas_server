@@ -126,19 +126,6 @@ def get_photos(args):
         return False
 
 
-def get_photo(id):
-    photo = PhotoModel.query.get(id)
-    if photo:
-        photo = photo.serialize
-        return photo
-    return None
-
-
-def delete_photo(id):
-    PhotoModel.query.filter_by(id=id).delete()
-    db.session.commit()
-
-
 parser_search = reqparse.RequestParser()
 parser_search.add_argument("action_ids", type=str, location="args", help="action ids")
 
@@ -214,8 +201,8 @@ class Photo(Resource, CustomeResponse):
     @api.doc("get_photo")
     @return_500_for_sever_error
     def get(self, id_):
-        if photo := get_photo(id_):
-            return self.send(response_type="SUCCESS", result=photo)
+        if photo := PhotoModel.get_by_id(id_):
+            return self.send(response_type="SUCCESS", result=photo.serialize)
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("update a photo")
@@ -224,7 +211,7 @@ class Photo(Resource, CustomeResponse):
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
         """Upload a photo to Onedrive"""
-        if get_photo(id_):
+        if PhotoModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_create.parse_args()
                 result, message = update_photo(id_, args)
@@ -239,9 +226,9 @@ class Photo(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        if get_photo(id_):
+        if PhotoModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                delete_photo(id_)
+                PhotoModel.delete_by_id(id_)
                 return self.send(response_type="NO_CONTENT")
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")

@@ -34,19 +34,9 @@ def get_locations(name=None):
     return [location.serialize for location in locations]
 
 
-def get_location(id_):
-    location = LocationModel.query.get(id_)
-    return location.serialize if location else None
-
-
 def update_location(id_, name):
     location = LocationModel.query.get(id_)
     location.name = name
-    db.session.commit()
-
-
-def delete_location(id_):
-    LocationModel.query.filter_by(id=id_).delete()
     db.session.commit()
 
 
@@ -85,8 +75,8 @@ class Locations(Resource, CustomeResponse):
 class Location(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
-        if location := get_location(id_):
-            return self.send(response_type="SUCCESS", result=location)
+        if location := LocationModel.get_by_id(id_):
+            return self.send(response_type="SUCCESS", result=location.serialize)
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("update location name")
@@ -94,7 +84,7 @@ class Location(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
-        if get_location(id_):
+        if LocationModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
                 update_location(id_, args["name"])
@@ -107,9 +97,9 @@ class Location(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        if get_location(id_):
+        if LocationModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                delete_location(id_)
+                LocationModel.delete_by_id(id_)
                 return self.send(response_type="NO_CONTENT")
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")

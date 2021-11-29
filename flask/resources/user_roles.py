@@ -28,19 +28,9 @@ def get_user_roles():
     return [user_role.serialize for user_role in UserRole.query.all()]
 
 
-def get_user_role(id_):
-    user_role = UserRole.query.get(id_)
-    return user_role.serialize if user_role else None
-
-
 def update_user_role(id_, name):
     user_role = UserRole.query.get(id_)
     user_role.name = name
-    db.session.commit()
-
-
-def delete_user_role(id_):
-    UserRole.query.filter_by(id=id_).delete()
     db.session.commit()
 
 
@@ -76,8 +66,8 @@ class UserRoles(Resource, CustomeResponse):
 class user_role(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
-        if user_role := get_user_role(id_):
-            return self.send(response_type="SUCCESS", result=user_role)
+        if user_role := UserRole.get_by_id(id_):
+            return self.send(response_type="SUCCESS", result=user_role.serialize)
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("update user_role name")
@@ -85,7 +75,7 @@ class user_role(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
-        if get_user_role(id_):
+        if UserRole.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
                 update_user_role(id_, args["name"])
@@ -98,9 +88,9 @@ class user_role(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        if get_user_role(id_):
+        if UserRole.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                delete_user_role(id_)
+                UserRole.delete_by_id(id_)
                 return self.send(response_type="NO_CONTENT")
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")

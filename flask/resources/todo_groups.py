@@ -36,16 +36,6 @@ def create_todo_group(user_id, arg):
     return todo_parent
 
 
-def get_todo_group(id):
-    todo = TodoParent.query.filter_by(id=id).first()
-    return todo.serialize if todo else None
-
-
-def delete_todo_group(id):
-    TodoParent.query.filter_by(id=id).delete()
-    db.session.commit()
-
-
 def get_todo_groups():
     return [todo.serialize for todo in TodoParent.query.all()]
 
@@ -85,8 +75,8 @@ class TodoGroup(Resource, CustomeResponse):
     @api.doc("Get a todo")
     @return_500_for_sever_error
     def get(self, id_):
-        if todo := get_todo_group(id_):
-            return self.send(response_type="SUCCESS", result=todo)
+        if todo := TodoParent.get_by_id(id_):
+            return self.send(response_type="SUCCESS", result=todo.serialize)
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("Delete a todo group and recreate todo group")
@@ -94,9 +84,9 @@ class TodoGroup(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
-        if get_todo_group(id_):
+        if TodoParent.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                delete_todo_group(id_)
+                TodoParent.delete_by_id(id_)
                 args = parser_post.parse_args()
                 result = create_todo_group(kwargs["auth_user"].id, args)
                 return self.send(response_type="CREATED", result=result.id)
@@ -108,9 +98,9 @@ class TodoGroup(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        if get_todo_group(id_):
+        if TodoParent.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                delete_todo_group(id_)
+                TodoParent.delete_by_id(id_)
                 return self.send(response_type="NO_CONTENT")
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")

@@ -41,19 +41,9 @@ def get_pet_by_name(name) -> dict:
     return pet.serialize if pet else None
 
 
-def get_pet(id_) -> dict:
-    pet = PetModel.query.get(id_)
-    return pet.serialize if pet else None
-
-
 def update_pet(id_, name):
     pet = PetModel.query.get(id_)
     pet.name = name
-    db.session.commit()
-
-
-def delete_pet(id_):
-    PetModel.query.filter_by(id=id_).delete()
     db.session.commit()
 
 
@@ -95,8 +85,8 @@ class Pets(Resource, CustomeResponse):
 class Pet(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
-        if pet := get_pet(id_):
-            return self.send(response_type="SUCCESS", result=pet)
+        if pet := PetModel.get_by_id(id_):
+            return self.send(response_type="SUCCESS", result=pet.serialize)
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("update pet name")
@@ -104,7 +94,7 @@ class Pet(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
-        if get_pet(id_):
+        if PetModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
                 update_pet(id_, args["name"])
@@ -117,9 +107,9 @@ class Pet(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        if get_pet(id_):
+        if PetModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                delete_pet(id_)
+                PetModel.delete_by_id(id_)
                 return self.send(response_type="NO_CONTENT")
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")

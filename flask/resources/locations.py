@@ -23,7 +23,7 @@ def create_location(name):
         location.create()
         return location, ""
     except sqlalchemy.exc.IntegrityError as e:
-        return False, f"Location name '{name}' already exsits."
+        return False, f"Location name '{name}' already exists."
 
 
 def get_locations(name=None):

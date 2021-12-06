@@ -29,7 +29,7 @@ def creat_pet(pet_columns):
         pet.create()
         return pet, ""
     except sqlalchemy.exc.IntegrityError as e:
-        return False, f"Pet name '{pet['name']}' already exsits."
+        return False, f"Pet name '{pet['name']}' already exists."
 
 
 def get_pets() -> list:

@@ -21,7 +21,7 @@ def create_user_role(name, description):
         user_role.create()
         return user_role, ""
     except sqlalchemy.exc.IntegrityError as e:
-        return False, f"User_role name '{name}' already exsits."
+        return False, f"User_role name '{name}' already exists."
 
 
 def get_user_roles():

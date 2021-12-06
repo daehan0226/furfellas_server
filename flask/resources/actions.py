@@ -25,7 +25,7 @@ def creat_action(name):
         action.create()
         return action, ""
     except sqlalchemy.exc.IntegrityError as e:
-        return False, f"Action name '{name}' already exsits."
+        return False, f"Action name '{name}' already exists."
 
 
 def get_actions(name=None) -> list:
@@ -34,6 +34,10 @@ def get_actions(name=None) -> list:
     else:
         actions = ActionModel.query.all()
     return [action.serialize for action in actions]
+
+
+def get_action_by_name(name) -> object:
+    return ActionModel.query.filter_by(name=name).first()
 
 
 def update_action(id_, name):
@@ -83,11 +87,19 @@ class Action(Resource, CustomeResponse):
     @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
-        if ActionModel.get_by_id(id_):
+        if action := ActionModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
+                if action.name == args["name"]:
+                    return self.send(response_type="NO_CONTENT")
+                if get_action_by_name(args["name"]):
+                    return self.send(
+                        response_type="FAIL",
+                        additional_message=f"{args['name']} already exists ",
+                    )
                 update_action(id_, args["name"])
                 return self.send(response_type="NO_CONTENT")
+
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")
 

@@ -35,7 +35,7 @@ def get_users(args) -> list:
 
 def update_user(user, arg) -> None:
     if arg["password"] is not None:
-        user.password = arg["password"]
+        user.password = UserModel.generate_hashed_password(arg["password"])
     if arg["email"] is not None:
         user.email = arg["email"]
     db.session.commit()

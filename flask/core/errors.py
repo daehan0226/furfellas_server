@@ -24,3 +24,15 @@ class GoogleUploadError(Exception):
     def __init__(self, message="Fail to upload file"):
         self.message = message
         super().__init__(self.message)
+
+
+class DatetimeConvertFormatError(Exception):
+    def __init__(self, message="Could not convert this format"):
+        self.message = message
+        super().__init__(self.message)
+
+
+class StringIdsFormatError(Exception):
+    def __init__(self, message="String ids must be like this, '1,2,3'"):
+        self.message = message
+        super().__init__(self.message)

@@ -7,13 +7,13 @@ from werkzeug.datastructures import FileStorage
 
 from core.database import db
 from core.models import Photo as PhotoModel, Action as ActionModel, Pet as PetModel
-from core.google_drive_api import GoogleManager  # get_service, get_folder_id
+from core.google_drive_api import GoogleManager
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
     return_401_for_no_auth,
 )
-from core.utils import convert_to_datetime
+from core.utils import convert_to_datetime, convert_str_ids_to_int_ids_tuple
 
 
 api = Namespace("photos", description="Photos related operations")
@@ -66,33 +66,23 @@ def update_photo(photo_id, photo_columns):
         return False, "Something went wrong"
 
 
-def convert_to_int_id_tuple(str_ids):
-    try:
-        if str_ids is not None and str_ids != "":
-            return (int(id_) for id_ in str_ids.split(","))
-        return False
-    except:
-        return False
-
-
 def get_photos(args):
     try:
         query = db.session.query(PhotoModel)
-        if location_ids := convert_to_int_id_tuple(args["location_ids"]):
+        if location_ids := convert_str_ids_to_int_ids_tuple(args["location_ids"]):
             query = query.filter(PhotoModel.location_id.in_(location_ids))
-        if action_ids := convert_to_int_id_tuple(args["action_ids"]):
+        if action_ids := convert_str_ids_to_int_ids_tuple(args["action_ids"]):
             query = query.join(PhotoModel.actions).filter(
                 ActionModel.id.in_(action_ids)
             )
-        if pet_ids := convert_to_int_id_tuple(args["pet_ids"]):
+        if pet_ids := convert_str_ids_to_int_ids_tuple(args["pet_ids"]):
             query = query.join(PhotoModel.pets).filter(PetModel.id.in_(pet_ids))
-        if args["start_datetime"] is not None and args["start_datetime"] != "":
-            convert_to_datetime(args["start_datetime"])
+        if args["start_datetime"]:
             query = query.filter(
                 PhotoModel.create_datetime
                 >= convert_to_datetime(args["start_datetime"])
             )
-        if args["end_datetime"] is not None and args["end_datetime"] != "":
+        if args["end_datetime"]:
             query = query.filter(
                 PhotoModel.create_datetime
                 <= (convert_to_datetime(args["end_datetime"]) + relativedelta(days=1))
@@ -101,7 +91,7 @@ def get_photos(args):
         return [photo.serialize for photo in photos]
     except:
         traceback.print_exc()
-        return False
+        return []
 
 
 parser_search = reqparse.RequestParser()

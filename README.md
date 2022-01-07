@@ -1,5 +1,5 @@
 ## Furfellas Server
-
+[![Python 3.8](https://img.shields.io/badge/python-v3.8-blue)](https://www.python.org/downloads/release/python-380/)
 ### 주요 기능
 1. 펫 프로필
    1. 펫 이름, 몸무게, 성격, 성별, 소개 등의 프로필 정보

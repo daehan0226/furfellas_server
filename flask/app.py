@@ -7,7 +7,7 @@ from core.database import db
 from core.config import config_by_name
 from resources.sessions import expire_old_session
 from resources import blueprint as api
-from core.google_drive_api import init_google_service
+from core.errors import ConfigTypeError, NoConfigError
 
 
 def db_schedulers(db_url):
@@ -16,16 +16,8 @@ def db_schedulers(db_url):
     thread.start()
 
 
-def init_settings():
-    try:
-        init_google_service()
-    except:
-        traceback.print_exc()
-
-
 def set_db(app):
     with app.app_context():
-        from core.models import Pet
 
         db.create_all()
         db.session.commit()
@@ -34,11 +26,14 @@ def set_db(app):
 
 def create_app(config_name):
     app = Flask(__name__)
-    app.config.from_object(config_by_name[config_name])
+
+    try:
+        app.config.from_object(config_by_name[config_name])
+    except KeyError:
+        raise ConfigTypeError
 
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     db.init_app(app)
-    init_settings()
     app.register_blueprint(api, url_prefix="/api")
 
     return app

@@ -1,49 +1,39 @@
-import os
 import traceback
+from threading import Thread
 from flask import Flask
 from flask_cors import CORS
-from dotenv import load_dotenv
 
 from core.database import db
-from resources.sessions import expire_old_session_job
+from core.config import config_by_name
+from resources.sessions import expire_old_session
 from resources import blueprint as api
-from core.google_drive_api import init_google_service
+from core.errors import ConfigTypeError, NoConfigError
 
 
-APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
-dotenv_path = os.path.join(APP_ROOT, ".env")
-load_dotenv(dotenv_path)
-
-
-def db_schedulers():
-    expire_old_session_job()
-
-
-def init_settings():
-    try:
-        init_google_service()
-    except:
-        traceback.print_exc()
+def db_schedulers(db_url):
+    thread = Thread(target=expire_old_session, args=(db_url,))
+    thread.daemon = True
+    thread.start()
 
 
 def set_db(app):
     with app.app_context():
-        from core import models
 
         db.create_all()
         db.session.commit()
-        db_schedulers()
+        db_schedulers(app.config["SQLALCHEMY_DATABASE_URI"])
 
 
-def create_app():
+def create_app(config_name):
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = "ssseetrr"
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    try:
+        app.config.from_object(config_by_name[config_name])
+    except KeyError:
+        raise ConfigTypeError
 
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     db.init_app(app)
-    init_settings()
     app.register_blueprint(api, url_prefix="/api")
 
     return app

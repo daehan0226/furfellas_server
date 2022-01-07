@@ -1,50 +1,67 @@
 import os.path
 from googleapiclient.discovery import build
+import werkzeug
 from oauth2client.service_account import ServiceAccountCredentials
+from apiclient.http import MediaFileUpload
+from core.errors import GoogleUploadError, GoogleFileNotFoundError
 
 
-SCOPES = ['https://www.googleapis.com/auth/drive']
-creds = None
+class SingletonInstane:
+    __instance = None
 
-def init_google_service():
-    global creds
+    @classmethod
+    def __getInstance(cls):
+        return cls.__instance
+
+    @classmethod
+    def instance(cls, *args, **kargs):
+        cls.__instance = cls(*args, **kargs)
+        cls.instance = cls.__getInstance
+        return cls.__instance
+
+
+class GoogleManager(SingletonInstane):
+    SCOPES = ["https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name(
-            'client_secret.json', scopes=SCOPES)
+        "client_secret.json", scopes=SCOPES
+    )
 
+    def __init__(self):
+        self.service = build("drive", "v3", credentials=self.creds)
 
-def get_folder_id(folder_name='furfellas'):
-    service = get_service()
-    results = service.files().list(
-        q=f"name = '{folder_name}'",
-        fields="nextPageToken, files(id, name)").execute()
-    items = results.get('files', [])
-    if not items:
-        return False
-    else:
-        for item in items:
-            if item['name'] == folder_name:
-                return item['id']
-    return False
+    def get_file_id_by_name(self, file_name):
+        results = (
+            self.service.files()
+            .list(q=f"name = '{file_name}'", fields="nextPageToken, files(id, name)")
+            .execute()
+        )
+        for item in results.get("files") or []:
+            if item["name"] == file_name:
+                return item["id"]
+        raise GoogleFileNotFoundError(file_name)
 
-def get_service():
-    global creds
-    service = build('drive', 'v3', credentials=creds)
-    return service
-
-
-def get_file_list(folder_id, size):
-    size = 10 if size is None else size
-    # Call the Drive v3 API
-    service = get_service()
-    results = service.files().list(
-        q= f"'{folder_id}' in parents and trashed = false",
-        pageSize=size, fields="nextPageToken, files(id, name)").execute()
-    items = results.get('files', [])
-
-    if not items:
-        print('No files found.')
-    else:
-        print('Files:')
-        for item in items:
-            print(u'{0} ({1})'.format(item['name'], item['id']))
-    return items
+    def upload_photo(self, file):
+        try:
+            filename = werkzeug.secure_filename(file.filename)
+            file_dir = f"tmp\{filename}"
+            file.save(file_dir)
+            if folder_id := self.get_file_id_by_name("furfellas"):
+                file_metadata = {
+                    "name": filename,
+                    "parents": [folder_id],
+                }
+                media = MediaFileUpload(
+                    file_dir, mimetype=file.content_type, resumable=True
+                )
+                result = (
+                    self.service.files()
+                    .create(body=file_metadata, media_body=media, fields="id")
+                    .execute()
+                )
+                if result["id"]:
+                    return result["id"]
+                else:
+                    raise GoogleUploadError
+        except Exception as e:
+            print(e)
+            return False

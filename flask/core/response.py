@@ -6,7 +6,7 @@ from flask import Response, current_app, request
 from core.constants import response
 
 
-def return_404_for_no_auth(f):
+def return_401_for_no_auth(f):
     def wrapper(*args, **kwargs):
         user = None
         from core.models import User as UserModel
@@ -18,10 +18,12 @@ def return_404_for_no_auth(f):
 
             if session := get_session(token=auth_header):
                 user = UserModel.query.get(session["user_id"])
-            else:
-                response = CustomeResponse()
-                return response.send(response_type="NO_AUTH")
-        return f(*args, **kwargs, auth_user=user)
+        if user is not None:
+            return f(*args, **kwargs, auth_user=user)
+
+        else:
+            response = CustomeResponse()
+            return response.send(response_type="NO_AUTH")
 
     wrapper.__doc__ = f.__doc__
     wrapper.__name__ = f.__name__

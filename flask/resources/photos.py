@@ -1,53 +1,34 @@
 import traceback
-import werkzeug
-import os
 import sqlalchemy
-from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from flask_restplus import Namespace, reqparse, Resource
+from sqlalchemy import exc
 from werkzeug.datastructures import FileStorage
-from apiclient.http import MediaFileUpload
 
 from core.database import db
-from core.models import Photo as PhotoModel, Action as ActionModel
-from core.google_drive_api import get_service, get_folder_id
+from core.models import Photo as PhotoModel, Action as ActionModel, Pet as PetModel
+from core.google_drive_api import GoogleManager
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
-    return_404_for_no_auth,
+    return_401_for_no_auth,
 )
+from core.utils import convert_to_datetime, convert_str_ids_to_int_ids_tuple
 
 
 api = Namespace("photos", description="Photos related operations")
 
 
-def upload_photo(file):
-    image_id = None
-    filename = werkzeug.secure_filename(file.filename)
-    file_dir = f"tmp\{filename}"
-    folder_id = get_folder_id()
-    file_metadata = {
-        "name": filename,
-        "parents": [folder_id],
-    }
-    file.save(file_dir)
-    media = MediaFileUpload(file_dir, mimetype=file.content_type, resumable=True)
-    service = get_service()
-    result = (
-        service.files()
-        .create(body=file_metadata, media_body=media, fields="id")
-        .execute()
-    )
-    image_id = result["id"]
-    return image_id
-
-
 def save_photo(photo_columns):
     try:
+        photo_columns["create_datetime"] = convert_to_datetime(
+            photo_columns["create_datetime"]
+        )
         photo = PhotoModel(**photo_columns)
-        action_ids = photo_columns["action_ids"].split(",")
-        photo.actions = [
-            ActionModel.query.get(int(action_id)) for action_id in action_ids
-        ]
+        photo.actions = get_action_model_list_from_str_action_ids(
+            photo_columns["action_ids"]
+        )
+        photo.pets = get_pet_model_list_from_str_action_ids(photo_columns["pet_ids"])
         return photo.create(), ""
     except sqlalchemy.exc.IntegrityError as e:
         return False, "Wrong location id"
@@ -58,51 +39,67 @@ def save_photo(photo_columns):
         return False, "Something went wrong"
 
 
+def get_action_model_list_from_str_action_ids(str_action_ids):
+    action_ids = str_action_ids.split(",")
+    return [ActionModel.query.get(int(action_id)) for action_id in action_ids]
+
+
+def get_pet_model_list_from_str_action_ids(str_pet_ids):
+    pet_ids = str_pet_ids.split(",")
+    return [PetModel.query.get(int(pet_id)) for pet_id in pet_ids]
+
+
+def update_photo(photo_id, photo_columns):
+    try:
+        photo = PhotoModel.query.get(photo_id)
+        photo.location_id = photo_columns["location_id"]
+        photo.description = photo_columns["description"]
+        photo.create_datetime = convert_to_datetime(photo_columns["create_datetime"])
+        photo.actions = get_action_model_list_from_str_action_ids(
+            photo_columns["action_ids"]
+        )
+        photo.pets = get_pet_model_list_from_str_action_ids(photo_columns["pet_ids"])
+        db.session.commit()
+        return True, ""
+    except:
+        traceback.print_exc()
+        return False, "Something went wrong"
+
+
 def get_photos(args):
     try:
         query = db.session.query(PhotoModel)
-        if args["type_ids"] is not None:
-            type_ids = (int(type_id) for type_id in args["type_ids"].split(","))
-            query = query.filter(PhotoModel.type_id.in_(type_ids))
-        if args["location_ids"] is not None:
-            location_ids = (
-                int(location_id) for location_id in args["location_ids"].split(",")
-            )
+        if location_ids := convert_str_ids_to_int_ids_tuple(args["location_ids"]):
             query = query.filter(PhotoModel.location_id.in_(location_ids))
-        if args["action_ids"] is not None:
-            action_ids = (int(action_id) for action_id in args["action_ids"].split(","))
+        if action_ids := convert_str_ids_to_int_ids_tuple(args["action_ids"]):
             query = query.join(PhotoModel.actions).filter(
                 ActionModel.id.in_(action_ids)
+            )
+        if pet_ids := convert_str_ids_to_int_ids_tuple(args["pet_ids"]):
+            query = query.join(PhotoModel.pets).filter(PetModel.id.in_(pet_ids))
+        if args["start_datetime"]:
+            query = query.filter(
+                PhotoModel.create_datetime
+                >= convert_to_datetime(args["start_datetime"])
+            )
+        if args["end_datetime"]:
+            query = query.filter(
+                PhotoModel.create_datetime
+                <= (convert_to_datetime(args["end_datetime"]) + relativedelta(days=1))
             )
         photos = query.all()
         return [photo.serialize for photo in photos]
     except:
         traceback.print_exc()
-        return False
-
-
-def get_photo(id):
-    photo = PhotoModel.query.get(id)
-    if photo:
-        photo = photo.serialize
-        print(photo)
-        return photo
-    return None
-
-
-def delete_photo(id):
-    PhotoModel.query.filter_by(id=id).delete()
+        return []
 
 
 parser_search = reqparse.RequestParser()
+parser_search.add_argument("action_ids", type=str, location="args", help="action ids")
+
+parser_search.add_argument("pet_ids", type=str, location="args", help="pet ids")
 parser_search.add_argument(
-    "type_ids", type=str, location="args", help="Alone or together"
-)
-parser_search.add_argument(
-    "action_ids", type=str, location="args", help="action ids or new actions"
-)
-parser_search.add_argument(
-    "location_ids", type=str, help="location ids or new locations", location="args"
+    "location_ids", type=str, help="location ids", location="args"
 )
 parser_search.add_argument(
     "start_datetime", type=str, help="search start date", location="args"
@@ -117,15 +114,11 @@ parser_search.add_argument("page", type=str, help="Photo page", location="args")
 
 
 parser_create = reqparse.RequestParser()
-parser_create.add_argument("file", type=FileStorage, location="files", required=True)
+parser_create.add_argument("file", type=FileStorage, location="files")
+parser_create.add_argument("action_ids", type=str, location="form", help="action ids")
+parser_create.add_argument("pet_ids", type=str, location="form", help="pet ids")
 parser_create.add_argument(
-    "type_id", type=int, location="form", help="Alone or together"
-)
-parser_create.add_argument(
-    "action_ids", type=str, location="form", help="action ids or new actions"
-)
-parser_create.add_argument(
-    "location_id", type=int, help="location ids or new locations", location="form"
+    "location_id", type=int, help="location ids", location="form"
 )
 parser_create.add_argument(
     "description", type=str, help="photo description", location="form"
@@ -151,41 +144,61 @@ class Photos(Resource, CustomeResponse):
 
     @api.doc("post a photo")
     @api.expect(parser_create, parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         """Upload a photo to Onedrive"""
         if kwargs["auth_user"].is_admin():
             args = parser_create.parse_args()
-            if image_id := upload_photo(args["file"]):
+            if args.get("file") is None:
+                return self.send(
+                    response_type="FAIL", additional_message="No file to upload"
+                )
+            google_service = GoogleManager.instance()
+            if image_id := google_service.upload_photo(args["file"]):
                 args["image_id"] = image_id
-                args["create_datetime"] = datetime.now()
                 args["user_id"] = kwargs["auth_user"].id
                 result, message = save_photo(args)
                 if result:
                     return self.send(response_type="CREATED", result=result.id)
                 return self.send(response_type="FAIL", additional_message=message)
+
         return self.send(response_type="FORBIDDEN")
 
 
 @api.route("/<id_>")
-@api.response(404, "photo not found")
 class Photo(Resource, CustomeResponse):
     @api.doc("get_photo")
     @return_500_for_sever_error
     def get(self, id_):
-        if photo := get_photo(id_):
-            return self.send(response_type="SUCCESS", result=photo)
+        if photo := PhotoModel.get_by_id(id_):
+            return self.send(response_type="SUCCESS", result=photo.serialize)
+        return self.send(response_type="NOT_FOUND")
+
+    @api.doc("update a photo")
+    @api.expect(parser_create, parser_auth)
+    @return_401_for_no_auth
+    @return_500_for_sever_error
+    def put(self, id_, **kwargs):
+        """Upload a photo to Onedrive"""
+        if PhotoModel.get_by_id(id_):
+            if kwargs["auth_user"].is_admin():
+                args = parser_create.parse_args()
+                result, message = update_photo(id_, args)
+                if result:
+                    return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="FAIL", additional_message=message)
+            return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("delete a photo")
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        if get_photo(id_):
+        if PhotoModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                delete_photo(id_)
+                PhotoModel.delete_by_id(id_)
                 return self.send(response_type="NO_CONTENT")
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")

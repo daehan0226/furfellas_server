@@ -1,24 +1,15 @@
-import os
 import pytest
 import json
 from dateutil.relativedelta import relativedelta
-from dotenv import load_dotenv
 
 from app import create_app
 from core.database import db
 
-APP_ROOT = os.path.join(os.path.dirname(__file__), "..")  # refers to application_top
-dotenv_path = os.path.join(APP_ROOT, ".env")
-load_dotenv(dotenv_path)
-
 
 @pytest.fixture
 def client():
-    app = create_app()
-    app.config["TESTING"] = True
-    app.testing = True
+    app = create_app("test")
     with app.test_client() as client:
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
         with app.app_context():
             db.create_all()
             yield client
@@ -28,8 +19,7 @@ def client():
 
 def pytest_sessionfinish(session, exitstatus):
     """whole test run finishes."""
-    app = create_app()
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
+    app = create_app("test")
 
     with app.app_context():
         db.drop_all()

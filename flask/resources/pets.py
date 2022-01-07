@@ -6,43 +6,44 @@ from core.response import (
     return_500_for_sever_error,
     return_401_for_no_auth,
 )
-from core.models import Action as ActionModel
+from core.models import Pet as PetModel
 from core.database import db
 
-api = Namespace("actions", description="actions related operations")
+api = Namespace("pets", description="pets related operations")
 
 parser_post = reqparse.RequestParser()
-parser_post.add_argument("name", type=str, required=True, help="action name")
-
+parser_post.add_argument("name", type=str, required=True)
+parser_post.add_argument("weight", type=int, required=True)
+parser_post.add_argument("birthday", type=str, required=True)
+parser_post.add_argument("color", type=str, help="CSS HEX", required=True)
+parser_post.add_argument("intro", type=str, required=True)
+parser_post.add_argument("photo_id", type=str)
 
 parser_search = reqparse.RequestParser()
-parser_search.add_argument("name", type=str, help="action name")
+parser_search.add_argument("name", type=str, help="pet name")
 
 
-def creat_action(name):
+def creat_pet(pet_columns):
     try:
-        action = ActionModel(name)
-        action.create()
-        return action, ""
+        pet = PetModel(**pet_columns)
+        pet.create()
+        return pet, ""
     except sqlalchemy.exc.IntegrityError as e:
-        return False, f"Action name '{name}' already exists."
+        return False, f"Pet name '{pet['name']}' already exists."
 
 
-def get_actions(name=None) -> list:
-    if name is not None:
-        actions = ActionModel.query.filter(ActionModel.name.like(f"%{name}%"))
-    else:
-        actions = ActionModel.query.all()
-    return [action.serialize for action in actions]
+def get_pets() -> list:
+    return [pet.serialize for pet in PetModel.query.all()]
 
 
-def get_action_by_name(name) -> object:
-    return ActionModel.query.filter_by(name=name).first()
+def get_pet_by_name(name) -> dict:
+    pet = PetModel.query.filter_by(name=name).first()
+    return pet.serialize if pet else None
 
 
-def update_action(id_, name):
-    action = ActionModel.query.get(id_)
-    action.name = name
+def update_pet(id_, name):
+    pet = PetModel.query.get(id_)
+    pet.name = name
     db.session.commit()
 
 
@@ -51,22 +52,28 @@ parser_auth.add_argument("Authorization", type=str, location="headers")
 
 
 @api.route("/")
-class Actions(Resource, CustomeResponse):
-    @api.doc("Get all actions")
+class Pets(Resource, CustomeResponse):
+    @api.doc("Get all pets")
     @api.expect(parser_search)
     @return_500_for_sever_error
     def get(self):
         args = parser_search.parse_args()
-        return self.send(response_type="SUCCESS", result=get_actions(name=args["name"]))
+        result = None
+        if args.get("name") is None:
+            result = get_pets()
+        else:
+            result = get_pet_by_name(args["name"])
 
-    @api.doc("create a new action")
+        return self.send(response_type="SUCCESS", result=result)
+
+    @api.doc("create a new pet")
     @api.expect(parser_post, parser_auth)
     @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         if kwargs["auth_user"].is_admin():
             args = parser_post.parse_args()
-            result, message = creat_action(args["name"])
+            result, message = creat_pet(args)
             if result:
                 return self.send(response_type="CREATED", result=result.id)
             return self.send(response_type="FAIL", additional_message=message)
@@ -74,43 +81,35 @@ class Actions(Resource, CustomeResponse):
 
 
 @api.route("/<int:id_>")
-@api.param("id_", "The action identifier")
-class Action(Resource, CustomeResponse):
+@api.param("id_", "The pet identifier")
+class Pet(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
-        if action := ActionModel.get_by_id(id_):
-            return self.send(response_type="SUCCESS", result=action.serialize)
+        if pet := PetModel.get_by_id(id_):
+            return self.send(response_type="SUCCESS", result=pet.serialize)
         return self.send(response_type="NOT_FOUND")
 
-    @api.doc("update action name")
+    @api.doc("update pet name")
     @api.expect(parser_post, parser_auth)
     @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
-        if action := ActionModel.get_by_id(id_):
+        if PetModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
-                if action.name == args["name"]:
-                    return self.send(response_type="NO_CONTENT")
-                if get_action_by_name(args["name"]):
-                    return self.send(
-                        response_type="FAIL",
-                        additional_message=f"{args['name']} already exists ",
-                    )
-                update_action(id_, args["name"])
+                update_pet(id_, args["name"])
                 return self.send(response_type="NO_CONTENT")
-
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")
 
-    @api.doc("delete an action")
+    @api.doc("delete an pet")
     @api.expect(parser_auth)
     @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        if ActionModel.get_by_id(id_):
+        if PetModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                ActionModel.delete_by_id(id_)
+                PetModel.delete_by_id(id_)
                 return self.send(response_type="NO_CONTENT")
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")

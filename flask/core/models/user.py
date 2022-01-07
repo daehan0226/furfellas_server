@@ -37,6 +37,10 @@ class User(BaseModel):
             email=self.email,
         )
 
+    @staticmethod
+    def generate_hashed_password(password):
+        return generate_password_hash(password)
+
     def set_password(self, password):
         self.password = generate_password_hash(password)
 

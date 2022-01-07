@@ -1,23 +1,19 @@
-from datetime import datetime
 from flask_restplus import Namespace, reqparse, Resource
 
-
+from core.database import db
 from core.models import TodoParent, TodoChildren
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
-    return_404_for_no_auth,
+    return_401_for_no_auth,
 )
+from core.utils import convert_to_datetime
 
 
 api = Namespace("todo-groups", description="todo groups related operations")
 
 
-def convert_to_datetime(datetime_, format="%Y-%m-%d %H:%M:%S"):
-    return datetime.strptime(datetime_, format)
-
-
-def create_todo_group(arg):
+def create_todo_group(user_id, arg):
     start_datetime = convert_to_datetime(arg["start_datetime"])
     finish_datetime = (
         convert_to_datetime(arg["finish_datetime"])
@@ -30,6 +26,7 @@ def create_todo_group(arg):
         arg.get("repeat_interval") or "",
         start_datetime,
         finish_datetime,
+        user_id,
     )
     todo_parent.create()
 
@@ -37,15 +34,6 @@ def create_todo_group(arg):
     TodoChildren.create_all(todo_children)
 
     return todo_parent
-
-
-def get_todo_group(id):
-    todo = TodoParent.query.filter_by(id=id).first()
-    return todo.serialize if todo else None
-
-
-def delete_todo_group(id):
-    return TodoParent.query.filter_by(id=id).delete()
 
 
 def get_todo_groups():
@@ -70,14 +58,14 @@ class TodoGroups(Resource, CustomeResponse):
         """ "Get all todo-groups"""
         return self.send(response_type="SUCCESS", result=get_todo_groups())
 
-    @api.expect(parser_post)
-    @return_404_for_no_auth
+    @api.expect(parser_post, parser_auth)
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         """ "Create a new todo"""
         if kwargs["auth_user"].is_admin():
             args = parser_post.parse_args()
-            result = create_todo_group(args)
+            result = create_todo_group(kwargs["auth_user"].id, args)
             return self.send(response_type="CREATED", result=result.id)
         return self.send(response_type="FORBIDDEN")
 
@@ -87,17 +75,32 @@ class TodoGroup(Resource, CustomeResponse):
     @api.doc("Get a todo")
     @return_500_for_sever_error
     def get(self, id_):
-        if todo := get_todo_group(id_):
-            return self.send(response_type="SUCCESS", result=todo)
+        if todo := TodoParent.get_by_id(id_):
+            return self.send(response_type="SUCCESS", result=todo.serialize)
+        return self.send(response_type="NOT_FOUND")
+
+    @api.doc("Delete a todo group and recreate todo group")
+    @api.expect(parser_auth, parser_post)
+    @return_401_for_no_auth
+    @return_500_for_sever_error
+    def put(self, id_, **kwargs):
+        if TodoParent.get_by_id(id_):
+            if kwargs["auth_user"].is_admin():
+                TodoParent.delete_by_id(id_)
+                args = parser_post.parse_args()
+                result = create_todo_group(kwargs["auth_user"].id, args)
+                return self.send(response_type="CREATED", result=result.id)
+            return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")
 
     @api.doc("Delete a todo")
-    @return_404_for_no_auth
+    @api.expect(parser_auth)
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
-        if get_todo_group(id_):
+        if TodoParent.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
-                if delete_todo_group(id_):
-                    return self.send(response_type="NO_CONTENT")
-                return self.send(response_type="FORBIDDEN")
+                TodoParent.delete_by_id(id_)
+                return self.send(response_type="NO_CONTENT")
+            return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")

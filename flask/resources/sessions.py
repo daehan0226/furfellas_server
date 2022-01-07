@@ -2,7 +2,6 @@ import os
 import time
 import traceback
 from datetime import datetime
-from threading import Thread
 from dotenv import load_dotenv
 
 from dateutil.relativedelta import relativedelta
@@ -11,7 +10,7 @@ from flask_restplus import Namespace, reqparse, Resource
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
-    return_404_for_no_auth,
+    return_401_for_no_auth,
 )
 from core.models import User as UserModel
 from core.models import Session as SessionModel
@@ -41,16 +40,10 @@ def get_session(user_id=None, token=None):
     return session.serialize if session else None
 
 
-def expire_old_session_job():
-    thread = Thread(target=expire_old_session)
-    thread.daemon = True
-    thread.start()
-
-
-def expire_old_session():
+def expire_old_session(db_url):
     while True:
         try:
-            db_scoped_session = get_db_session()
+            db_scoped_session = get_db_session(db_url)
             db_session = db_scoped_session()
             sessions = db_session.query(SessionModel).all()
             for session in sessions:
@@ -60,8 +53,8 @@ def expire_old_session():
                 if expire_datetime < datetime.now():
                     db_session.query(SessionModel).filter_by(id=session.id).delete()
                     db_session.commit()
-            time.sleep(SESSION_CHECK_TIME_SECONDS)
             db_scoped_session.remove()
+            time.sleep(SESSION_CHECK_TIME_SECONDS)
         except:
             traceback.print_exc()
             break
@@ -101,15 +94,18 @@ class Session(Resource, CustomeResponse):
         args = parser_create.parse_args()
         if user := get_user_if_verified(args["username"], args["password"]):
             delete_session(id_=user.id)
-            return self.send(
-                response_type="CREATED", result=create_session(user.id).token
-            )
+            result = {
+                "user": user.username,
+                "is_admin": 1 if user.is_admin() else 0,
+                "session": create_session(user.id).token,
+            }
+            return self.send(response_type="CREATED", result=result)
         return self.send(
             response_type="FAIL", additional_message="Check your id and password."
         )
 
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, **kwargs):
         if kwargs["auth_user"] is not None:
@@ -121,12 +117,14 @@ class Session(Resource, CustomeResponse):
 @api.route("/validate")
 class SessionVlidation(Resource, CustomeResponse):
     @api.expect(parser_auth)
-    @return_404_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def get(self, **kwargs):
         """Check if session is valid"""
         if kwargs["auth_user"] is not None:
-            return self.send(
-                response_type="SUCCESS", result=kwargs["auth_user"].serialize
-            )
+            result = {
+                "user": kwargs["auth_user"].username,
+                "is_admin": 1 if kwargs["auth_user"].is_admin() else 0,
+            }
+            return self.send(response_type="SUCCESS", result=result)
         return self.send(response_type="FAIL")

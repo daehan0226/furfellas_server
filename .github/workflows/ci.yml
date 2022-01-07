@@ -10,6 +10,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./flask
     steps:
       - uses: actions/checkout@v2
       - name: Install Python 3
@@ -17,10 +20,8 @@ jobs:
         with:
           python-version: 3.8
       - name: Install dependencies
-        working-directory: ./flask
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run tests with pytest
-        working-directory: ./flask
         run: python -m pytest

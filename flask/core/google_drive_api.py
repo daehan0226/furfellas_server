@@ -3,6 +3,8 @@ from googleapiclient.discovery import build
 import werkzeug
 from oauth2client.service_account import ServiceAccountCredentials
 from apiclient.http import MediaFileUpload
+from flask import current_app
+
 from core.errors import GoogleUploadError, GoogleFileNotFoundError
 
 
@@ -22,8 +24,12 @@ class SingletonInstane:
 
 class GoogleManager(SingletonInstane):
     SCOPES = ["https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "client_secret.json", scopes=SCOPES
+    creds = (
+        None
+        if current_app.config["TESTING"]
+        else ServiceAccountCredentials.from_json_keyfile_name(
+            "client_secret.json", scopes=SCOPES
+        )
     )
 
     def __init__(self):

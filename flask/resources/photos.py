@@ -1,14 +1,13 @@
 import traceback
-import werkzeug
 import sqlalchemy
 from dateutil.relativedelta import relativedelta
 from flask_restplus import Namespace, reqparse, Resource
+from sqlalchemy import exc
 from werkzeug.datastructures import FileStorage
-from apiclient.http import MediaFileUpload
 
 from core.database import db
 from core.models import Photo as PhotoModel, Action as ActionModel, Pet as PetModel
-from core.google_drive_api import get_service, get_folder_id
+from core.google_drive_api import GoogleManager  # get_service, get_folder_id
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
@@ -18,27 +17,6 @@ from core.utils import convert_to_datetime
 
 
 api = Namespace("photos", description="Photos related operations")
-
-
-def upload_photo(file):
-    image_id = None
-    filename = werkzeug.secure_filename(file.filename)
-    file_dir = f"tmp\{filename}"
-    folder_id = get_folder_id()
-    file_metadata = {
-        "name": filename,
-        "parents": [folder_id],
-    }
-    file.save(file_dir)
-    media = MediaFileUpload(file_dir, mimetype=file.content_type, resumable=True)
-    service = get_service()
-    result = (
-        service.files()
-        .create(body=file_metadata, media_body=media, fields="id")
-        .execute()
-    )
-    image_id = result["id"]
-    return image_id
 
 
 def save_photo(photo_columns):
@@ -186,13 +164,15 @@ class Photos(Resource, CustomeResponse):
                 return self.send(
                     response_type="FAIL", additional_message="No file to upload"
                 )
-            if image_id := upload_photo(args["file"]):
+            google_service = GoogleManager.instance()
+            if image_id := google_service.upload_photo(args["file"]):
                 args["image_id"] = image_id
                 args["user_id"] = kwargs["auth_user"].id
                 result, message = save_photo(args)
                 if result:
                     return self.send(response_type="CREATED", result=result.id)
                 return self.send(response_type="FAIL", additional_message=message)
+
         return self.send(response_type="FORBIDDEN")
 
 

@@ -23,17 +23,14 @@ class SingletonInstane:
 
 
 class GoogleManager(SingletonInstane):
-    SCOPES = ["https://www.googleapis.com/auth/drive"]
-    creds = (
-        None
-        if current_app.config["TESTING"]
-        else ServiceAccountCredentials.from_json_keyfile_name(
-            "client_secret.json", scopes=SCOPES
-        )
-    )
-
     def __init__(self):
-        self.service = build("drive", "v3", credentials=self.creds)
+        self.service = build(
+            "drive",
+            "v3",
+            credentials=ServiceAccountCredentials.from_json_keyfile_name(
+                "client_secret.json", scopes=["https://www.googleapis.com/auth/drive"]
+            ),
+        )
 
     def get_file_id_by_name(self, file_name):
         results = (

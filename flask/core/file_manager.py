@@ -37,8 +37,7 @@ class FileManager:
     @staticmethod
     def remove(filename):
         try:
-            raise Exception
-            # os.remove(f"{FileManager.tmp_dir}\{filename}")
+            os.remove(f"{FileManager.tmp_dir}\{filename}")
         except:
             raise FileRemoveError(filename)
 

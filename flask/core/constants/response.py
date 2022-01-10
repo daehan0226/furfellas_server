@@ -1,6 +1,7 @@
 status = {
     "SUCCESS": 200,  # GET - DATA OR EMPTY LIST
-    "CREATED": 201,  # POST
+    "CREATED": 201,  # POST,
+    "ACCEPTED": 202,  # POST - ASYNC
     "NO_CONTENT": 204,  # DELETE, PUT
     "FAIL": 400,  # GENERAIL FAIL - CLIENT ERROR
     "NO_AUTH": 401,  # LOGIN NEEDED
@@ -12,7 +13,8 @@ status = {
 message = {
     "kr": {
         "SUCCESS": "성공",  # GET - DATA OR EMPTY LIST
-        "CREATED": "생성",  # POST
+        "CREATED": "생성",  # POST,
+        "ACCEPTED": "요청 성공",
         "NO_CONTENT": "데이터 없음",  # DELETE, PUT
         "FAIL": "실패",  # GENERAIL FAIL - CLIENT ERROR
         "NO_AUTH": "로그인이 필요합니다.",  # LOGIN NEEDED
@@ -23,6 +25,7 @@ message = {
     "en": {
         "SUCCESS": "Success",  # GET - DATA OR EMPTY LIST
         "CREATED": "Created",  # POST
+        "ACCEPTED": "Request accepted",
         "NO_CONTENT": "No content",  # DELETE, PUT
         "FAIL": "Fail",  # GENERAIL FAIL - CLIENT ERROR
         "NO_AUTH": "Please login first",  # LOGIN NEEDED

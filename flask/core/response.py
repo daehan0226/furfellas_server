@@ -34,8 +34,9 @@ def return_500_for_sever_error(f):
     def wrapper(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except:
+        except Exception as e:
             traceback.print_exc()
+            print(f"500 error : {e}")
             response = CustomeResponse()
             return response.send(
                 response_type="SEVER_ERROR",

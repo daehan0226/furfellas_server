@@ -36,3 +36,9 @@ class StringIdsFormatError(Exception):
     def __init__(self, message="String ids must be like this, '1,2,3'"):
         self.message = message
         super().__init__(self.message)
+
+
+class FileSaveError(Exception):
+    def __init__(self, message="Fail to save the file"):
+        self.message = message
+        super().__init__(self.message)

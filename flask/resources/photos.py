@@ -14,9 +14,21 @@ from core.response import (
     return_401_for_no_auth,
 )
 from core.utils import convert_to_datetime, convert_str_ids_to_int_ids_tuple
+from core.file_manager import FileManager
+from core.errors import FileSaveError
 
 
 api = Namespace("photos", description="Photos related operations")
+
+
+def save_file(file):
+    try:
+        file = FileManager(file)
+        file.save()
+        return file.name
+    except:
+        traceback.print_exc()
+        raise FileSaveError
 
 
 def save_photo(photo_columns):
@@ -29,7 +41,8 @@ def save_photo(photo_columns):
             photo_columns["action_ids"]
         )
         photo.pets = get_pet_model_list_from_str_action_ids(photo_columns["pet_ids"])
-        return photo.create(), ""
+        return False, "Something went wrong"
+        # return photo.create(), ""
     except sqlalchemy.exc.IntegrityError as e:
         return False, "Wrong location id"
     except sqlalchemy.orm.exc.FlushError as e:
@@ -154,14 +167,16 @@ class Photos(Resource, CustomeResponse):
                 return self.send(
                     response_type="FAIL", additional_message="No file to upload"
                 )
-            google_service = GoogleManager.instance()
-            if image_id := google_service.upload_photo(args["file"]):
-                args["image_id"] = image_id
-                args["user_id"] = kwargs["auth_user"].id
-                result, message = save_photo(args)
-                if result:
-                    return self.send(response_type="CREATED", result=result.id)
-                return self.send(response_type="FAIL", additional_message=message)
+            # google_service = GoogleManager.instance()
+            # if image_id := google_service.upload_photo(args["file"]):
+            # args["image_id"] = image_id
+            args["user_id"] = kwargs["auth_user"].id
+            args["file_name"] = save_file(args["file"])
+
+            result, message = save_photo(args)
+            if result:
+                return self.send(response_type="ACCEPTED", result=result.id)
+            return self.send(response_type="FAIL", additional_message=message)
 
         return self.send(response_type="FORBIDDEN")
 

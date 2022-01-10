@@ -12,7 +12,8 @@ class Photo(BaseModel):
     __tablename__ = "photo"
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(200))
-    image_id = db.Column(db.String(100), unique=True, nullable=False)
+    image_id = db.Column(db.String(100))
+    file_name = db.Column(db.String(100), unique=True, nullable=False)
     location_id = db.Column(
         db.Integer, db.ForeignKey("location.id", ondelete="SET NULL")
     )
@@ -30,10 +31,15 @@ class Photo(BaseModel):
 
     def __init__(self, **columns):
         self.description = columns["description"]
-        self.image_id = columns["image_id"]
+        self.image_id = ""  # columns["image_id"]
         self.location_id = columns["location_id"]
         self.user_id = columns["user_id"]
         self.create_datetime = columns["create_datetime"]
+        self.file_name = columns["file_name"]
+
+    def insert_image_id(self, image_id):
+        self.image_id = image_id
+        db.session.commit()
 
     def __repr__(self):
         return self._repr(

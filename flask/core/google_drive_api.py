@@ -4,7 +4,11 @@ import werkzeug
 from oauth2client.service_account import ServiceAccountCredentials
 from apiclient.http import MediaFileUpload
 
+from core.database import db
 from core.errors import GoogleUploadError, GoogleFileNotFoundError
+from core.models.photo import Photo
+
+from apiclient import errors
 
 
 class SingletonInstane:
@@ -61,3 +65,12 @@ class GoogleManager(SingletonInstane):
         except Exception as e:
             print(e)
             return False
+
+    def print_file_metadata(self, file_id):
+        try:
+            file = self.service.files().get(fileId=file_id).execute()
+            print(
+                f"file<id={file['id']}, name={file['name']}, mime_type={file['mimeType']}>"
+            )
+        except errors.HttpError as e:
+            print(f"An error occurred: {e}")

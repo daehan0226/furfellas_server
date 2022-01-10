@@ -40,10 +40,10 @@ def get_session(user_id=None, token=None):
     return session.serialize if session else None
 
 
-def expire_old_session(db_url):
+def expire_old_session():
     while True:
         try:
-            db_scoped_session = get_db_session(db_url)
+            db_scoped_session = get_db_session()
             db_session = db_scoped_session()
             sessions = db_session.query(SessionModel).all()
             for session in sessions:

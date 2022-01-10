@@ -1,5 +1,10 @@
-import traceback
+import os
+import time
 import sqlalchemy
+import traceback
+import threading
+from dotenv import load_dotenv
+
 from dateutil.relativedelta import relativedelta
 from flask_restplus import Namespace, reqparse, Resource
 from sqlalchemy import exc
@@ -16,7 +21,15 @@ from core.response import (
 from core.utils import convert_to_datetime, convert_str_ids_to_int_ids_tuple
 from core.file_manager import FileManager
 from core.errors import FileSaveError
+from core.database import get_db_session
 
+
+APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
+dotenv_path = os.path.join(APP_ROOT, ".env")
+load_dotenv(dotenv_path)
+
+
+REMOVE_IMAGE_INTERVAL_SECONDS = int(os.getenv("REMOVE_IMAGE_INTERVAL_HOURS")) * 3600
 
 api = Namespace("photos", description="Photos related operations")
 
@@ -27,8 +40,62 @@ def save_file(file):
         file.save()
         return file.name
     except:
-        traceback.print_exc()
         raise FileSaveError
+
+
+def remove_uploaded_file():
+    while True:
+        try:
+            db_scoped_session = get_db_session()
+            db_session = db_scoped_session()
+
+            tmp_files = FileManager.get_tmp_files()
+            for tmp_file in tmp_files:
+                try:
+                    photo = (
+                        db_session.query(PhotoModel)
+                        .filter_by(filename=str(tmp_file))
+                        .one()
+                    )
+                    if photo.upload_status == PhotoModel.get_upload_status_id(
+                        "uploaded"
+                    ):
+                        FileManager.remove(tmp_file)
+                except Exception as e:
+                    FileManager.remove(tmp_file)
+        except Exception as e:
+            print(e)
+        finally:
+            time.sleep(REMOVE_IMAGE_INTERVAL_SECONDS)
+
+
+def upload_images():
+    db_scoped_session = get_db_session()
+    db_session = db_scoped_session()
+    photos = db_session.query(PhotoModel).filter_by(
+        upload_status=PhotoModel.get_upload_status_id("waiting")
+    )
+    google_service = GoogleManager.instance()
+    for photo in photos:
+        photo.upload_status = PhotoModel.get_upload_status_id("uploading")
+        db_session.commit()
+        try:
+            image_id = google_service.upload_photo(photo.filename)
+            photo.image_id = image_id
+            photo.upload_status = PhotoModel.get_upload_status_id("uploaded")
+        except:
+            photo.upload_status = PhotoModel.get_upload_status_id("fail")
+        finally:
+            db_session.commit()
+            db_scoped_session.remove()
+
+
+def start_upload_images_thread():
+    try:
+        t1 = threading.Thread(target=upload_images, daemon=True)
+        t1.start()
+    except Exception as e:
+        print(e)
 
 
 def save_photo(photo_columns):
@@ -41,11 +108,12 @@ def save_photo(photo_columns):
             photo_columns["action_ids"]
         )
         photo.pets = get_pet_model_list_from_str_action_ids(photo_columns["pet_ids"])
-        return False, "Something went wrong"
-        # return photo.create(), ""
+        return photo.create(), ""
     except sqlalchemy.exc.IntegrityError as e:
+        print(e)
         return False, "Wrong location id"
     except sqlalchemy.orm.exc.FlushError as e:
+        print(e)
         return False, "Wrong action id"
     except:
         traceback.print_exc()
@@ -82,6 +150,9 @@ def update_photo(photo_id, photo_columns):
 def get_photos(args):
     try:
         query = db.session.query(PhotoModel)
+        query = query.filter(
+            PhotoModel.upload_status == PhotoModel.get_upload_status_id("uploaded")
+        )
         if location_ids := convert_str_ids_to_int_ids_tuple(args["location_ids"]):
             query = query.filter(PhotoModel.location_id.in_(location_ids))
         if action_ids := convert_str_ids_to_int_ids_tuple(args["action_ids"]):
@@ -167,14 +238,12 @@ class Photos(Resource, CustomeResponse):
                 return self.send(
                     response_type="FAIL", additional_message="No file to upload"
                 )
-            # google_service = GoogleManager.instance()
-            # if image_id := google_service.upload_photo(args["file"]):
-            # args["image_id"] = image_id
             args["user_id"] = kwargs["auth_user"].id
-            args["file_name"] = save_file(args["file"])
+            args["filename"] = save_file(args["file"])
 
             result, message = save_photo(args)
             if result:
+                start_upload_images_thread()
                 return self.send(response_type="ACCEPTED", result=result.id)
             return self.send(response_type="FAIL", additional_message=message)
 

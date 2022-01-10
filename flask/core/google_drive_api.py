@@ -3,7 +3,6 @@ from googleapiclient.discovery import build
 import werkzeug
 from oauth2client.service_account import ServiceAccountCredentials
 from apiclient.http import MediaFileUpload
-from flask import current_app
 
 from core.errors import GoogleUploadError, GoogleFileNotFoundError
 
@@ -32,39 +31,33 @@ class GoogleManager(SingletonInstane):
             ),
         )
 
-    def get_file_id_by_name(self, file_name):
+    def get_file_id_by_name(self, filename):
         results = (
             self.service.files()
-            .list(q=f"name = '{file_name}'", fields="nextPageToken, files(id, name)")
+            .list(q=f"name = '{filename}'", fields="nextPageToken, files(id, name)")
             .execute()
         )
         for item in results.get("files") or []:
-            if item["name"] == file_name:
+            if item["name"] == filename:
                 return item["id"]
-        raise GoogleFileNotFoundError(file_name)
+        raise GoogleFileNotFoundError(filename)
 
-    def upload_photo(self, file):
+    def upload_photo(self, filename):
         try:
-            filename = werkzeug.secure_filename(file.filename)
-            file_dir = f"tmp\{filename}"
-            file.save(file_dir)
-            if folder_id := self.get_file_id_by_name("furfellas"):
-                file_metadata = {
-                    "name": filename,
-                    "parents": [folder_id],
-                }
-                media = MediaFileUpload(
-                    file_dir, mimetype=file.content_type, resumable=True
-                )
-                result = (
-                    self.service.files()
-                    .create(body=file_metadata, media_body=media, fields="id")
-                    .execute()
-                )
-                if result["id"]:
-                    return result["id"]
-                else:
-                    raise GoogleUploadError
+            file_metadata = {
+                "name": filename,
+                "parents": [self.get_file_id_by_name("furfellas")],
+            }
+            media = MediaFileUpload(f"tmp/{filename}", resumable=True)
+            result = (
+                self.service.files()
+                .create(body=file_metadata, media_body=media, fields="id")
+                .execute()
+            )
+            if result["id"]:
+                return result["id"]
+            else:
+                raise GoogleUploadError
         except Exception as e:
             print(e)
             return False

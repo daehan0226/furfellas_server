@@ -2,7 +2,7 @@ import os
 import time
 import sqlalchemy
 import traceback
-import threading
+from threading import Lock, Thread
 from dotenv import load_dotenv
 
 from dateutil.relativedelta import relativedelta
@@ -43,6 +43,9 @@ def save_file(file):
         raise FileSaveError
 
 
+lock = Lock()
+
+
 def remove_uploaded_file():
     while True:
         try:
@@ -50,6 +53,7 @@ def remove_uploaded_file():
             db_session = db_scoped_session()
 
             tmp_files = FileManager.get_tmp_files()
+
             for tmp_file in tmp_files:
                 try:
                     photo = (
@@ -66,36 +70,45 @@ def remove_uploaded_file():
         except Exception as e:
             print(e)
         finally:
+            db_scoped_session.remove()
             time.sleep(REMOVE_IMAGE_INTERVAL_SECONDS)
 
 
-def upload_images():
+def get_photos_to_upload():
     db_scoped_session = get_db_session()
     db_session = db_scoped_session()
     photos = db_session.query(PhotoModel).filter_by(
         upload_status=PhotoModel.get_upload_status_id("waiting")
     )
-    google_service = GoogleManager.instance()
-    for photo in photos:
-        photo.upload_status = PhotoModel.get_upload_status_id("uploading")
-        db_session.commit()
-        try:
-            image_id = google_service.upload_photo(photo.filename)
-            photo.image_id = image_id
-            photo.upload_status = PhotoModel.get_upload_status_id("uploaded")
-        except:
-            photo.upload_status = PhotoModel.get_upload_status_id("fail")
-        finally:
+    db_scoped_session.remove()
+    return photos
+
+
+def upload():
+    photos = get_photos_to_upload()
+    filenames = [photo.filename for photo in photos]
+    for filename in filenames:
+        with lock:
+            db_scoped_session = get_db_session()
+            db_session = db_scoped_session()
+            photo = db_session.query(PhotoModel).filter_by(filename=filename).one()
+            photo.upload_status = PhotoModel.get_upload_status_id("uploading")
             db_session.commit()
-            db_scoped_session.remove()
+
+            try:
+                google_service = GoogleManager.instance()
+                photo.image_id = google_service.upload_photo(filename)
+                photo.upload_status = PhotoModel.get_upload_status_id("uploaded")
+            except:
+                photo.upload_status = PhotoModel.get_upload_status_id("fail")
+            finally:
+                db_session.commit()
+                db_scoped_session.remove()
 
 
-def start_upload_images_thread():
-    try:
-        t1 = threading.Thread(target=upload_images, daemon=True)
-        t1.start()
-    except Exception as e:
-        print(e)
+def upload_images_thread():
+    thread1 = Thread(target=upload, daemon=True)
+    thread1.start()
 
 
 def save_photo(photo_columns):
@@ -243,7 +256,7 @@ class Photos(Resource, CustomeResponse):
 
             result, message = save_photo(args)
             if result:
-                start_upload_images_thread()
+                upload_images_thread()
                 return self.send(response_type="ACCEPTED", result=result.id)
             return self.send(response_type="FAIL", additional_message=message)
 

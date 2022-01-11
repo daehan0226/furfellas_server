@@ -256,7 +256,7 @@ class Photos(Resource, CustomeResponse):
 
     @api.doc("post a photo")
     @api.expect(parser_create, parser_auth)
-    # @return_401_for_no_auth
+    @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         """Upload a photo to Onedrive"""

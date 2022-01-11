@@ -30,7 +30,7 @@ class FileManager:
 
     def save(self):
         try:
-            self.file.save(f"{self.tmp_dir}\{self.name}")
+            self.file.save(os.path.join(self.tmp_dir, self.name))
         except:
             raise FileSaveError(self.name)
 

@@ -38,16 +38,6 @@ REMOVE_IMAGE_INTERVAL_SECONDS = int(os.getenv("REMOVE_IMAGE_INTERVAL_HOURS")) * 
 
 api = Namespace("photos", description="Photos related operations")
 
-
-def save_file(file):
-    try:
-        file = FileManager(file)
-        file.save()
-        return file.name
-    except:
-        raise FileSaveError
-
-
 lock = Lock()
 
 
@@ -266,7 +256,8 @@ class Photos(Resource, CustomeResponse):
                 return self.send(
                     response_type="FAIL", additional_message="No file to upload"
                 )
-            filename = save_file(args["file"])
+            file = FileManager(args["file"])
+            filename = file.save()
 
             args["filename"] = filename
             args["user_id"] = kwargs["auth_user"].id

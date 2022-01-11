@@ -1,5 +1,6 @@
 import os
 from os import path, listdir
+from os.path import dirname, abspath
 from datetime import datetime
 from sqlalchemy import exc
 import werkzeug
@@ -9,7 +10,7 @@ from core.errors import FileRemoveError, FileSaveError, FileExtractExtentionErro
 
 
 class FileManager:
-    tmp_dir = "tmp"
+    tmp_dir = os.path.join(dirname(dirname(abspath(__file__))), "tmp")
 
     def __init__(self, file):
         self.file = file

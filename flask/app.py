@@ -1,4 +1,3 @@
-import traceback
 from threading import Thread
 from flask import Flask
 from flask_cors import CORS

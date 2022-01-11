@@ -1,8 +1,10 @@
+from datetime import datetime
 import os
 import time
 import sqlalchemy
 import traceback
 from threading import Lock, Thread
+from multiprocessing.pool import ThreadPool
 from dotenv import load_dotenv
 
 from dateutil.relativedelta import relativedelta
@@ -12,7 +14,6 @@ from werkzeug.datastructures import FileStorage
 
 from core.database import db
 from core.models import Photo as PhotoModel, Action as ActionModel, Pet as PetModel
-from core.google_drive_api import GoogleManager
 from core.response import (
     CustomeResponse,
     return_500_for_sever_error,
@@ -22,6 +23,10 @@ from core.utils import convert_to_datetime, convert_str_ids_to_int_ids_tuple
 from core.file_manager import FileManager
 from core.errors import FileSaveError
 from core.database import get_db_session
+from core.google_drive_api import (
+    get_file_id_in_google_drvie_by_name,
+    upload_to_google_drive,
+)
 
 
 APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
@@ -84,31 +89,41 @@ def get_photos_to_upload():
     return photos
 
 
-def upload():
-    photos = get_photos_to_upload()
-    filenames = [photo.filename for photo in photos]
-    for filename in filenames:
-        with lock:
-            db_scoped_session = get_db_session()
-            db_session = db_scoped_session()
-            photo = db_session.query(PhotoModel).filter_by(filename=filename).one()
-            photo.upload_status = PhotoModel.get_upload_status_id("uploading")
-            db_session.commit()
+def upload_files(filenames=None):
+    if filenames is None:
+        photos = get_photos_to_upload()
+        filenames = [photo.filename for photo in photos]
+        # filenames = FileManager.get_tmp_files()
 
-            try:
-                google_service = GoogleManager.instance()
-                photo.image_id = google_service.upload_photo(filename)
-                photo.upload_status = PhotoModel.get_upload_status_id("uploaded")
-            except:
-                photo.upload_status = PhotoModel.get_upload_status_id("fail")
-            finally:
-                db_session.commit()
-                db_scoped_session.remove()
+    if filenames:
+        folder_id = get_file_id_in_google_drvie_by_name("furfellas")
+        file_info = [(folder_id, filename) for filename in filenames]
+        # p = ThreadPool(4)
+        # p.starmap(upload, file_info)
+
+        for file in file_info:
+            folder_id, file_name = file
+            upload_thread = Thread(
+                target=upload, args=(folder_id, file_name), daemon=True
+            )
+            upload_thread.start()
 
 
-def upload_images_thread():
-    thread1 = Thread(target=upload, daemon=True)
-    thread1.start()
+def upload(folder_id, filename):
+    with lock:
+        db_scoped_session = get_db_session()
+        db_session = db_scoped_session()
+        photo = db_session.query(PhotoModel).filter_by(filename=filename).one()
+        photo.upload_status = PhotoModel.get_upload_status_id("uploading")
+        db_session.commit()
+        try:
+            photo.image_id = upload_to_google_drive(folder_id, filename)
+            photo.upload_status = PhotoModel.get_upload_status_id("uploaded")
+        except:
+            photo.upload_status = PhotoModel.get_upload_status_id("fail")
+
+        db_session.commit()
+        db_scoped_session.remove()
 
 
 def save_photo(photo_columns):
@@ -241,7 +256,7 @@ class Photos(Resource, CustomeResponse):
 
     @api.doc("post a photo")
     @api.expect(parser_create, parser_auth)
-    @return_401_for_no_auth
+    # @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
         """Upload a photo to Onedrive"""
@@ -251,12 +266,13 @@ class Photos(Resource, CustomeResponse):
                 return self.send(
                     response_type="FAIL", additional_message="No file to upload"
                 )
-            args["user_id"] = kwargs["auth_user"].id
-            args["filename"] = save_file(args["file"])
+            filename = save_file(args["file"])
 
+            args["filename"] = filename
+            args["user_id"] = kwargs["auth_user"].id
             result, message = save_photo(args)
             if result:
-                upload_images_thread()
+                upload_files(filenames=[filename])
                 return self.send(response_type="ACCEPTED", result=result.id)
             return self.send(response_type="FAIL", additional_message=message)
 

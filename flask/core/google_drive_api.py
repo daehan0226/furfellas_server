@@ -102,7 +102,7 @@ event = Event()
 
 
 def file_producer(queue, event):
-    while not event.is_set():
+    while not event.is_set():  # when 0(initial value/ after calling clear method)
 
         from resources.photos import get_photos_to_upload
 
@@ -122,6 +122,12 @@ def file_consumer(queue, event):
 
 
 def file_upload_thread():
+    """
+    Python Event
+    Flag  initaial value 0
+    set() -> 1, clear() -> 0, wait(1 -> return, 0 -> wait), is_set() -> current flag value
+    """
+
     global pipeline
     global event
 
@@ -130,8 +136,8 @@ def file_upload_thread():
             executor.submit(file_producer, pipeline, event)
             executor.submit(file_consumer, pipeline, event)
 
-            event.set()
-        event.clear()
+            event.set()  # finish thread pool
+        event.clear()  # reset flag to 0 to start agian
 
 
 # file_upload_thread()

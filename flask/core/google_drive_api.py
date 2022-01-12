@@ -1,4 +1,7 @@
 from apiclient.http import MediaFileUpload
+from queue import Queue
+from threading import Thread, Event
+import concurrent.futures
 
 from core.database import db
 from core.errors import GoogleUploadError, GoogleFileNotFoundError
@@ -10,6 +13,7 @@ import google_auth_httplib2
 import httplib2
 from googleapiclient import discovery
 from google.oauth2 import service_account
+from core.file_manager import FileManager
 
 
 def get_google_service_and_http_instance():
@@ -72,6 +76,7 @@ def upload_to_google_drive(folder_id, filename):
             .create(body=file_metadata, media_body=media, fields="id")
             .execute(http=http)
         )
+        print(result)
         if result["id"]:
             return result["id"]
         else:
@@ -90,3 +95,43 @@ def print_file_metadata(file_id):
         )
     except errors.HttpError as e:
         print(f"An error occurred: {e}")
+
+
+pipeline = Queue(maxsize=100)
+event = Event()
+
+
+def file_producer(queue, event):
+    while not event.is_set():
+
+        from resources.photos import get_photos_to_upload
+
+        files = get_photos_to_upload()
+        for file in files:
+            print(f"File producer got file: {file}")
+            queue.put(file)
+
+
+def file_consumer(queue, event):
+    while not event.is_set() or not queue.empty():
+        filename = queue.get()
+        print(f"upload file : {filename}")
+        upload_to_google_drive(
+            get_file_id_in_google_drvie_by_name("furfellas"), filename
+        )
+
+
+def file_upload_thread():
+    global pipeline
+    global event
+
+    while True:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            executor.submit(file_producer, pipeline, event)
+            executor.submit(file_consumer, pipeline, event)
+
+            event.set()
+        event.clear()
+
+
+# file_upload_thread()

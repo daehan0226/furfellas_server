@@ -13,7 +13,6 @@ import google_auth_httplib2
 import httplib2
 from googleapiclient import discovery
 from google.oauth2 import service_account
-from core.file_manager import FileManager
 
 
 def get_google_service_and_http_instance():

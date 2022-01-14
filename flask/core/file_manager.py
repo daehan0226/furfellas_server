@@ -33,21 +33,20 @@ class FileManager:
         try:
             path = os.path.join(self.tmp_dir, self.name)
             self.file.save(path)
-            print(f"save file path : {path}")
             return self.name
         except:
             raise FileSaveError(self.name)
 
-    @staticmethod
-    def remove(filename):
+    @classmethod
+    def remove(cls, dir=None, filename=None):
+        dir = cls.tmp_dir if dir is None else dir
         try:
-            path = os.path.join(FileManager.tmp_dir, filename)
+            path = os.path.join(dir, filename)
             os.remove(path)
-            print(f"remove file path : {path}")
         except:
             raise FileRemoveError(filename)
 
-    @staticmethod
-    def get_tmp_files():
-        dir_path = FileManager.tmp_dir
-        return [f for f in listdir(dir_path) if path.isfile(path.join(dir_path, f))]
+    @classmethod
+    def get_tmp_files(cls, dir=None):
+        dir = cls.tmp_dir if dir is None else dir
+        return [f for f in listdir(dir) if path.isfile(path.join(dir, f))]

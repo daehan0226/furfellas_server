@@ -70,13 +70,13 @@ class Photo(BaseModel):
     @property
     def serialize(self):
         """Return object data in easily serializable format"""
-        from core.models import Location, User
+        from core.models import Location, UserProfile
 
         return {
             "id": self.id,
             "description": self.description,
             "image_id": self.image_id,
-            "user": User.query.get(self.user_id).serialize,
+            "user": UserProfile.query.get(self.user_id).serialize,
             "create_datetime": self.create_datetime.isoformat(),
             "upload_datetime": self.upload_datetime.isoformat(),
             "upload_status": self._upload_status_str(self.upload_status),

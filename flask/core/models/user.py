@@ -18,17 +18,11 @@ class User(BaseModel):
 
     session = db.relationship("Session", cascade="all, delete-orphan")
 
-    protected_columns = ["password"]
-
     def __init__(self, role_id):
         self.role_id = role_id
 
     def __repr__(self):
-        return self._repr(
-            id=self.id,
-            username=self.username,
-            email=self.email,
-        )
+        return self._repr(id=self.id)
 
     def create(self):
         db.session.add(self)

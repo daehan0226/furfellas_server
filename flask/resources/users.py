@@ -6,6 +6,7 @@ from core.response import (
     CustomeResponse,
 )
 from core.models import User as UserModel, UserRole as UserRoleModel
+from core.models import UserProfile as UserProfileModel
 from core.database import db
 
 api = Namespace("users", description="Users related operations")
@@ -13,41 +14,44 @@ api = Namespace("users", description="Users related operations")
 
 def create_user(args) -> dict:
     general_user_role = UserRoleModel.query.filter_by(name="general").first()
-    user = UserModel(
-        args["username"], args.get("email"), args["password"], general_user_role.id
+    user = UserModel(general_user_role.id)
+    new_user = user.create()
+    user_profile = UserProfileModel(
+        args["username"], args.get("email"), args["password"], new_user.id
     )
-    user.create()
-    return user
+    return user_profile.create()
 
 
 def get_users(args) -> list:
     if args.get("username") is not None:
-        users = UserModel.query.filter(
-            UserModel.username.like(f"%{args.get('username')}%")
+        users = UserProfileModel.query.filter(
+            UserProfileModel.username.like(f"%{args.get('username')}%")
         )
 
     elif args.get("email") is not None:
-        users = UserModel.query.filter(UserModel.email.like(f"%{args.get('email')}%"))
+        users = UserProfileModel.query.filter(
+            UserProfileModel.email.like(f"%{args.get('email')}%")
+        )
     else:
-        users = UserModel.query.all()
+        users = UserProfileModel.query.all()
     return [user.serialize for user in users]
 
 
 def update_user(user, arg) -> None:
     if arg["password"] is not None:
-        user.password = UserModel.generate_hashed_password(arg["password"])
+        user.password = UserProfileModel.generate_hashed_password(arg["password"])
     if arg["email"] is not None:
         user.email = arg["email"]
     db.session.commit()
 
 
 def get_user_by_username(username) -> dict:
-    user = UserModel.query.filter_by(username=username).first()
+    user = UserProfileModel.query.filter_by(username=username).first()
     return user.serialize if user else None
 
 
 def get_user_by_email(email) -> dict:
-    user = UserModel.query.filter_by(email=email).first()
+    user = UserProfileModel.query.filter_by(email=email).first()
     return user.serialize if user else None
 
 

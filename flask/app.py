@@ -1,9 +1,11 @@
+import os
 from threading import Thread
 from flask import Flask
 from flask_cors import CORS
 
 from core.database import db
 from core.config import config_by_name
+from core.models.user_profile import insert_admin_user_if_not_exist
 from resources.photos import remove_uploaded_file
 from resources.sessions import expire_old_session
 from resources import blueprint as api
@@ -25,6 +27,7 @@ def set_db(app):
         db.create_all()
         db.session.commit()
         start_thread_jobs()
+        insert_admin_user_if_not_exist()
 
 
 def create_app(config_name):

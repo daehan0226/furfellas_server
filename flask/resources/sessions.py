@@ -13,6 +13,7 @@ from core.response import (
     return_401_for_no_auth,
 )
 from core.models import User as UserModel
+from core.models import UserProfile as UserProfileModel
 from core.models import Session as SessionModel
 from core.database import get_db_session, db
 
@@ -61,7 +62,7 @@ def expire_old_session():
 
 
 def get_user_if_verified(username, password):
-    user = UserModel.query.filter_by(username=username).first()
+    user = UserProfileModel.query.filter_by(username=username).first()
     if user:
         if user.check_password(password):
             return user
@@ -85,17 +86,17 @@ parser_auth.add_argument("Authorization", type=str, location="headers")
 
 
 @api.route("/")
-@api.response(401, "Session not found")
 class Session(Resource, CustomeResponse):
     @api.expect(parser_create)
     @return_500_for_sever_error
     def post(self):
         """Create a session after verifying user info"""
         args = parser_create.parse_args()
-        if user := get_user_if_verified(args["username"], args["password"]):
+        if user_profile := get_user_if_verified(args["username"], args["password"]):
+            user = UserModel.query.get(user_profile.user_id)
             delete_session(id_=user.id)
             result = {
-                "user": user.username,
+                "user": user_profile.username,
                 "is_admin": 1 if user.is_admin() else 0,
                 "session": create_session(user.id).token,
             }
@@ -123,7 +124,7 @@ class SessionVlidation(Resource, CustomeResponse):
         """Check if session is valid"""
         if kwargs["auth_user"] is not None:
             result = {
-                "user": kwargs["auth_user"].username,
+                "user": kwargs["user_profile"].username,
                 "is_admin": 1 if kwargs["auth_user"].is_admin() else 0,
             }
             return self.send(response_type="SUCCESS", result=result)

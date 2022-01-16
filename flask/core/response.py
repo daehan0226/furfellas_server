@@ -1,3 +1,4 @@
+import os
 import traceback
 import json
 
@@ -8,18 +9,25 @@ from core.constants import response
 
 def return_401_for_no_auth(f):
     def wrapper(*args, **kwargs):
-        user = None
         from core.models import User as UserModel
+        from core.models import UserProfile as UserProfileModel
+        from resources.sessions import get_session
 
+        user = None
+        user_profile = None
         if current_app.config["TESTING"]:
-            return f(*args, **kwargs, auth_user=UserModel.query.get(1))
-        if auth_header := request.headers.get("Authorization"):
-            from resources.sessions import get_session
+            user_profile = UserProfileModel.query.filter_by(
+                username=os.getenv("ADMIN_USER_NAME")
+            ).one()
+            user = UserModel.query.get(user_profile.user_id)
+            return f(*args, **kwargs, auth_user=user, user_profile=user_profile)
 
+        if auth_header := request.headers.get("Authorization"):
             if session := get_session(token=auth_header):
                 user = UserModel.query.get(session["user_id"])
+                user_profile = UserProfileModel.query.filter_by(user_id=user.id).one()
         if user is not None:
-            return f(*args, **kwargs, auth_user=user)
+            return f(*args, **kwargs, auth_user=user, user_profile=user_profile)
 
         else:
             response = CustomeResponse()

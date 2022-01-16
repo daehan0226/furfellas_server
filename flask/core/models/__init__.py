@@ -7,3 +7,4 @@ from .user_role import UserRole
 from .user import User
 from .session import Session
 from .photo import Photo
+from .auth_provider import AuthProvider

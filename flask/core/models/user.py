@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 from sqlalchemy import event
-from werkzeug.security import generate_password_hash, check_password_hash
 from core.database import db
 from core.models.base import BaseModel
 
@@ -14,9 +13,6 @@ load_dotenv(dotenv_path)
 class User(BaseModel):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True)
-    password = db.Column(db.String(100), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey("user_role.id", ondelete="SET NULL"))
     created_datetime = db.Column(db.DateTime, default=datetime.now())
 
@@ -24,11 +20,8 @@ class User(BaseModel):
 
     protected_columns = ["password"]
 
-    def __init__(self, username, email, password, role_id, **kwargs):
-        self.username = username
-        self.email = email
+    def __init__(self, role_id):
         self.role_id = role_id
-        self.set_password(password)
 
     def __repr__(self):
         return self._repr(
@@ -37,15 +30,10 @@ class User(BaseModel):
             email=self.email,
         )
 
-    @staticmethod
-    def generate_hashed_password(password):
-        return generate_password_hash(password)
-
-    def set_password(self, password):
-        self.password = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password, password)
+    def create(self):
+        db.session.add(self)
+        db.session.commit()
+        return self
 
     def is_admin(self):
         if self.role_id == int(os.getenv("ADMIN_ROLE_ID")):
@@ -56,23 +44,3 @@ class User(BaseModel):
         if self.role_id == int(os.getenv("MANAGER_ROLE_ID")):
             return True
         return False
-
-
-@event.listens_for(User.__table__, "after_create")
-def insert_initial_values(*args, **kwargs):
-    initial_users = [
-        User(
-            os.getenv("ADMIN_USER_NAME"),
-            os.getenv("ADMIN_USER_EMAIL"),
-            os.getenv("ADMIN_USER_PASSWORD"),
-            os.getenv("ADMIN_ROLE_ID"),
-        ),
-        User(
-            os.getenv("MANAGER_USER_NAME"),
-            os.getenv("MANAGER_USER_EMAIL"),
-            os.getenv("MANAGER_USER_PASSWORD"),
-            os.getenv("MANAGER_ROLE_ID"),
-        ),
-    ]
-    db.session.add_all(initial_users)
-    db.session.commit()

@@ -10,10 +10,10 @@ class AuthProvider(BaseModel):
     )
     provider_type = db.Column(db.String(100), nullable=False)
 
-    def __init__(self, provider_key, user_id, provider_type):
+    def __init__(self, provider_key, provider_type, user_id):
         self.provider_key = provider_key
-        self.user_id = user_id
         self.provider_type = provider_type
+        self.user_id = user_id
 
     def __repr__(self):
         return self._repr(provider_key=self.provider_key)

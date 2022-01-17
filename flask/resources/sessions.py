@@ -124,7 +124,7 @@ class SessionVlidation(Resource, CustomeResponse):
         """Check if session is valid"""
         if kwargs["auth_user"] is not None:
             result = {
-                "user": kwargs["user_profile"].username,
+                "user": kwargs["user_profile"]["username"],
                 "is_admin": 1 if kwargs["auth_user"].is_admin() else 0,
             }
             return self.send(response_type="SUCCESS", result=result)

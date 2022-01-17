@@ -25,7 +25,17 @@ def return_401_for_no_auth(f):
         if auth_header := request.headers.get("Authorization"):
             if session := get_session(token=auth_header):
                 user = UserModel.query.get(session["user_id"])
-                user_profile = UserProfileModel.query.filter_by(user_id=user.id).one()
+                try:
+                    user_profile = (
+                        UserProfileModel.query.filter_by(user_id=session["user_id"])
+                        .one()
+                        .serialize
+                    )
+                except:
+                    from resources.oauth_user import verify_google_access_token
+
+                    _, username = verify_google_access_token(auth_header)
+                    user_profile = {"username": username}
         if user is not None:
             return f(*args, **kwargs, auth_user=user, user_profile=user_profile)
 

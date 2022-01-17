@@ -34,6 +34,14 @@ class UserProfile(BaseModel):
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
+    @property
+    def serialize(self):
+        return {
+            "username": self.username,
+            "email": self.username,
+            "user_id": self.user_id,
+        }
+
 
 def insert_admin_user_if_not_exist():
     admin = UserProfile.query.filter_by(username=os.getenv("ADMIN_USER_NAME")).all()

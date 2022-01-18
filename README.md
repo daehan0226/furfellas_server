@@ -18,17 +18,16 @@
   * 각 엔드포인트 테스트(리소스 생성,추가,수정,삭제)
   * 헬퍼 함수 테스트
   * 픽스쳐 - API context(test), TEST DB
-* RESTFUL API 
-![Restful_api](https://user-images.githubusercontent.com/47915302/148562064-14def396-530d-493e-a560-882f6e8f8c22.png)
 # API DOC
-
 ## Authorization
-
 | Key | Value | 
 | :--- | :--- | 
 | `Authorization` | Session key |
 
-## Responses
+## Endpoints
+<details>
+<summary>actions</summary>
+
 | Fetch actions	|  |
 | :--- | :--- | 
 | URL	| /actions |
@@ -54,6 +53,7 @@
 | Error Response	| Code: 404 <br> Content:{"error": "NOT FOUND}
 | Sample Request	| /actions/1 |
 | Notes	|  |
+</details>
 
 ## Status Codes
 

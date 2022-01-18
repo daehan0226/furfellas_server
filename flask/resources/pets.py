@@ -64,7 +64,7 @@ class Pets(Resource, CustomeResponse):
         else:
             result = get_pet_by_name(args["name"])
 
-        return self.send(response_type="SUCCESS", result=result)
+        return self.send(response_type="OK", result=result)
 
     @api.doc("create a new pet")
     @api.expect(parser_post, parser_auth)
@@ -86,8 +86,8 @@ class Pet(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
         if pet := PetModel.get_by_id(id_):
-            return self.send(response_type="SUCCESS", result=pet.serialize)
-        return self.send(response_type="NOT_FOUND")
+            return self.send(response_type="OK", result=pet.serialize)
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("update pet name")
     @api.expect(parser_post, parser_auth)
@@ -98,9 +98,9 @@ class Pet(Resource, CustomeResponse):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
                 update_pet(id_, args["name"])
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("delete an pet")
     @api.expect(parser_auth)
@@ -110,6 +110,6 @@ class Pet(Resource, CustomeResponse):
         if PetModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 PetModel.delete_by_id(id_)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")

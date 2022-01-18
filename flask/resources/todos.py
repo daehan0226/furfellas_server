@@ -51,4 +51,4 @@ class Todos(Resource, CustomeResponse):
     def get(self):
         """ "Get all todos"""
         args = parser_search.parse_args()
-        return self.send(response_type="SUCCESS", result=get_todos(**args))
+        return self.send(response_type="OK", result=get_todos(**args))

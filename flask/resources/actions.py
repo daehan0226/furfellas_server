@@ -57,7 +57,7 @@ class Actions(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self):
         args = parser_search.parse_args()
-        return self.send(response_type="SUCCESS", result=get_actions(name=args["name"]))
+        return self.send(response_type="OK", result=get_actions(name=args["name"]))
 
     @api.doc("create a new action")
     @api.expect(parser_post, parser_auth)
@@ -79,8 +79,8 @@ class Action(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
         if action := ActionModel.get_by_id(id_):
-            return self.send(response_type="SUCCESS", result=action.serialize)
-        return self.send(response_type="NOT_FOUND")
+            return self.send(response_type="OK", result=action.serialize)
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("update action name")
     @api.expect(parser_post, parser_auth)
@@ -91,17 +91,17 @@ class Action(Resource, CustomeResponse):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
                 if action.name == args["name"]:
-                    return self.send(response_type="NO_CONTENT")
+                    return self.send(response_type="NO CONTENT")
                 if get_action_by_name(args["name"]):
                     return self.send(
                         response_type="BAD REQUEST",
                         additional_message=f"{args['name']} already exists ",
                     )
                 update_action(id_, args["name"])
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
 
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("delete an action")
     @api.expect(parser_auth)
@@ -111,6 +111,6 @@ class Action(Resource, CustomeResponse):
         if ActionModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 ActionModel.delete_by_id(id_)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")

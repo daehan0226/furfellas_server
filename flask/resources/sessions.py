@@ -112,8 +112,8 @@ class Session(Resource, CustomeResponse):
     def delete(self, **kwargs):
         if kwargs["auth_user"] is not None:
             delete_session(id_=kwargs["auth_user"].id)
-            return self.send(response_type="NO_CONTENT")
-        return self.send(response_type="NOT_FOUND")
+            return self.send(response_type="NO CONTENT")
+        return self.send(response_type="NOT FOUND")
 
 
 @api.route("/validate")
@@ -128,5 +128,5 @@ class SessionVlidation(Resource, CustomeResponse):
                 "user": kwargs["user_profile"]["username"],
                 "is_admin": 1 if kwargs["auth_user"].is_admin() else 0,
             }
-            return self.send(response_type="SUCCESS", result=result)
+            return self.send(response_type="OK", result=result)
         return self.send(response_type="BAD REQUEST")

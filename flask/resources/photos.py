@@ -242,7 +242,7 @@ class Photos(Resource, CustomeResponse):
     def get(self):
         """List all photos"""
         args = parser_search.parse_args()
-        return self.send(response_type="SUCCESS", result=get_photos(args))
+        return self.send(response_type="OK", result=get_photos(args))
 
     @api.doc("post a photo")
     @api.expect(parser_create, parser_auth)
@@ -276,8 +276,8 @@ class Photo(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
         if photo := PhotoModel.get_by_id(id_):
-            return self.send(response_type="SUCCESS", result=photo.serialize)
-        return self.send(response_type="NOT_FOUND")
+            return self.send(response_type="OK", result=photo.serialize)
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("update a photo")
     @api.expect(parser_create, parser_auth)
@@ -290,12 +290,12 @@ class Photo(Resource, CustomeResponse):
                 args = parser_create.parse_args()
                 result, message = update_photo(id_, args)
                 if result:
-                    return self.send(response_type="NO_CONTENT")
+                    return self.send(response_type="NO CONTENT")
                 return self.send(
                     response_type="BAD REQUEST", additional_message=message
                 )
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("delete a photo")
     @api.expect(parser_auth)
@@ -305,6 +305,6 @@ class Photo(Resource, CustomeResponse):
         if PhotoModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 PhotoModel.delete_by_id(id_)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")

@@ -51,9 +51,7 @@ class Locations(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self):
         args = parser_search.parse_args()
-        return self.send(
-            response_type="SUCCESS", result=get_locations(name=args["name"])
-        )
+        return self.send(response_type="OK", result=get_locations(name=args["name"]))
 
     @api.doc("create a new location")
     @api.expect(parser_post, parser_auth)
@@ -76,8 +74,8 @@ class Location(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
         if location := LocationModel.get_by_id(id_):
-            return self.send(response_type="SUCCESS", result=location.serialize)
-        return self.send(response_type="NOT_FOUND")
+            return self.send(response_type="OK", result=location.serialize)
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("update location name")
     @api.expect(parser_post, parser_auth)
@@ -88,9 +86,9 @@ class Location(Resource, CustomeResponse):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
                 update_location(id_, args["name"])
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("delete a location")
     @api.expect(parser_auth)
@@ -100,6 +98,6 @@ class Location(Resource, CustomeResponse):
         if LocationModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 LocationModel.delete_by_id(id_)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")

@@ -29,7 +29,31 @@
 | `Authorization` | Session key |
 
 ## Responses
+| Fetch actions	|  |
+| :--- | :--- | 
+| URL	| /actions |
+| Method	| GET |
+| Success Response	| Code: 200 <br> Content:[{"id": 1, "name": "play"}, ...}]
 
+| Fetch an action	|  |
+| :--- | :--- | 
+| URL	| /actions/<strong>id:action_id</strong> |
+| URL Parameters |	Required: <strong>action_id=[integer]</strong>
+| Method	| GET |
+| Success Response	| Code: 200 <br> Content:{"id": 1, "name": "play"}
+| Error Response	| Code: 404 <br> Content:{"error": "NOT FOUND}
+| Sample Request	| /actions/1 |
+| Notes	|  |
+
+| Delete an action	|  |
+| :--- | :--- | 
+| URL	| /actions/<strong>id:action_id</strong> |
+| URL Parameters |	Required: <strong>action_id=[integer]</strong>
+| Method	| DELETE |
+| Success Response	| Code: 204 <br> NO CONTENT
+| Error Response	| Code: 404 <br> Content:{"error": "NOT FOUND}
+| Sample Request	| /actions/1 |
+| Notes	|  |
 
 ## Status Codes
 
@@ -37,7 +61,7 @@ API returns the following status codes:
 
 | Status Code | Description |
 | :--- | :--- |
-| 200 | `Success` |
+| 200 | `OK` |
 | 201 | `CREATED` |
 | 202 | `ACCEPTED` |
 | 204 | `No CONTENT` |

@@ -75,7 +75,7 @@ class OauthUser(Resource, CustomeResponse):
                     provider_key=provider_key
                 ).first()
                 user_id = oauth2_user.user_id
-                response_type = "SUCCESS"
+                response_type = "OK"
 
             except:
                 user_id = create_oauth2_user(provider_key, "google")

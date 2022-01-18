@@ -43,7 +43,7 @@ class UserRoles(Resource, CustomeResponse):
     @api.doc("Get all user_roles")
     @return_500_for_sever_error
     def get(self):
-        return self.send(response_type="SUCCESS", result=get_user_roles())
+        return self.send(response_type="OK", result=get_user_roles())
 
     @api.doc("create a new user_role")
     @api.expect(parser_post, parser_auth)
@@ -67,8 +67,8 @@ class user_role(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
         if user_role := UserRole.get_by_id(id_):
-            return self.send(response_type="SUCCESS", result=user_role.serialize)
-        return self.send(response_type="NOT_FOUND")
+            return self.send(response_type="OK", result=user_role.serialize)
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("update user_role name")
     @api.expect(parser_post, parser_auth)
@@ -79,9 +79,9 @@ class user_role(Resource, CustomeResponse):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
                 update_user_role(id_, args["name"])
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("delete a user_role")
     @api.expect(parser_auth)
@@ -91,6 +91,6 @@ class user_role(Resource, CustomeResponse):
         if UserRole.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 UserRole.delete_by_id(id_)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")

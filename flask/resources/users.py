@@ -92,7 +92,7 @@ class Users(Resource, CustomeResponse):
         """Get all users"""
         if kwargs["auth_user"].is_admin():
             args = parser_search.parse_args()
-            return self.send(response_type="SUCCESS", result=get_users(args))
+            return self.send(response_type="OK", result=get_users(args))
         return self.send(response_type="FORBIDDEN")
 
     @api.doc("create a new user")
@@ -119,8 +119,8 @@ class User(Resource, CustomeResponse):
     def get(self, id_, **kwargs):
         if user := UserModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin() or kwargs["auth_user"].id == id_:
-                return self.send(response_type="SUCCESS", result=user.serialize)
-        return self.send(response_type="NOT_FOUND")
+                return self.send(response_type="OK", result=user.serialize)
+        return self.send(response_type="NOT FOUND")
 
     @api.expect(parser_auth)
     @return_401_for_no_auth
@@ -129,9 +129,9 @@ class User(Resource, CustomeResponse):
         if UserModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 UserModel.delete_by_id(id_)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")
 
     @api.expect(parser_create, parser_auth)
     @return_401_for_no_auth
@@ -141,6 +141,6 @@ class User(Resource, CustomeResponse):
             if kwargs["auth_user"].is_admin():
                 args = parser_create.parse_args()
                 update_user(UserModel.query.get(id_), args)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")

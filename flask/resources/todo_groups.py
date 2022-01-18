@@ -56,7 +56,7 @@ class TodoGroups(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self):
         """ "Get all todo-groups"""
-        return self.send(response_type="SUCCESS", result=get_todo_groups())
+        return self.send(response_type="OK", result=get_todo_groups())
 
     @api.expect(parser_post, parser_auth)
     @return_401_for_no_auth
@@ -76,8 +76,8 @@ class TodoGroup(Resource, CustomeResponse):
     @return_500_for_sever_error
     def get(self, id_):
         if todo := TodoParent.get_by_id(id_):
-            return self.send(response_type="SUCCESS", result=todo.serialize)
-        return self.send(response_type="NOT_FOUND")
+            return self.send(response_type="OK", result=todo.serialize)
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("Delete a todo group and recreate todo group")
     @api.expect(parser_auth, parser_post)
@@ -91,7 +91,7 @@ class TodoGroup(Resource, CustomeResponse):
                 result = create_todo_group(kwargs["auth_user"].id, args)
                 return self.send(response_type="CREATED", result=result.id)
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("Delete a todo")
     @api.expect(parser_auth)
@@ -101,6 +101,6 @@ class TodoGroup(Resource, CustomeResponse):
         if TodoParent.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 TodoParent.delete_by_id(id_)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")

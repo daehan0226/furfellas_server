@@ -103,7 +103,7 @@ class Users(Resource, CustomeResponse):
         args = parser_create.parse_args()
         if duplicate_keys := check_user_info_duplicates(args):
             return self.send(
-                response_type="FAIL",
+                response_type="BAD REQUEST",
                 additional_message=gen_dupilcate_keys_message(duplicate_keys),
             )
         result = create_user(args)

@@ -254,7 +254,7 @@ class Photos(Resource, CustomeResponse):
             args = parser_create.parse_args()
             if args.get("file") is None:
                 return self.send(
-                    response_type="FAIL", additional_message="No file to upload"
+                    response_type="BAD REQUEST", additional_message="No file to upload"
                 )
             file = FileManager(args["file"])
             filename = file.save()
@@ -265,7 +265,7 @@ class Photos(Resource, CustomeResponse):
             if result:
                 upload_files(filenames=[filename])
                 return self.send(response_type="ACCEPTED", result=result.id)
-            return self.send(response_type="FAIL", additional_message=message)
+            return self.send(response_type="BAD REQUEST", additional_message=message)
 
         return self.send(response_type="FORBIDDEN")
 
@@ -291,7 +291,9 @@ class Photo(Resource, CustomeResponse):
                 result, message = update_photo(id_, args)
                 if result:
                     return self.send(response_type="NO_CONTENT")
-                return self.send(response_type="FAIL", additional_message=message)
+                return self.send(
+                    response_type="BAD REQUEST", additional_message=message
+                )
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT_FOUND")
 

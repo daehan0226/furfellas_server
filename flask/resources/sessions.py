@@ -102,7 +102,8 @@ class Session(Resource, CustomeResponse):
             }
             return self.send(response_type="CREATED", result=result)
         return self.send(
-            response_type="FAIL", additional_message="Check your id and password."
+            response_type="BAD REQUEST",
+            additional_message="Check your id and password.",
         )
 
     @api.expect(parser_auth)
@@ -128,4 +129,4 @@ class SessionVlidation(Resource, CustomeResponse):
                 "is_admin": 1 if kwargs["auth_user"].is_admin() else 0,
             }
             return self.send(response_type="SUCCESS", result=result)
-        return self.send(response_type="FAIL")
+        return self.send(response_type="BAD REQUEST")

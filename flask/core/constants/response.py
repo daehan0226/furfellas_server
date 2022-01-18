@@ -3,7 +3,7 @@ status = {
     "CREATED": 201,  # POST,
     "ACCEPTED": 202,  # POST - ASYNC
     "NO_CONTENT": 204,  # DELETE, PUT
-    "FAIL": 400,  # GENERAIL FAIL - CLIENT ERROR
+    "BAD REQUEST": 400,  # GENERAIL FAIL - CLIENT ERROR
     "NO_AUTH": 401,  # LOGIN NEEDED
     "FORBIDDEN": 403,  # ADMIN ONLY
     "NOT_FOUND": 404,  # NOT FOUND BY IDENTIFIER
@@ -16,7 +16,7 @@ message = {
         "CREATED": "생성",  # POST,
         "ACCEPTED": "요청 성공",
         "NO_CONTENT": "데이터 없음",  # DELETE, PUT
-        "FAIL": "실패",  # GENERAIL FAIL - CLIENT ERROR
+        "BAD REQUEST": "잘못된 요청",  # GENERAIL FAIL - CLIENT ERROR
         "NO_AUTH": "로그인이 필요합니다.",  # LOGIN NEEDED
         "FORBIDDEN": "접근 권한이 없습니다.",  # ADMIN ONLY
         "NOT_FOUND": "원하시는 데이터를 찾지 못했습니다.",  # NOT FOUND BY IDENTIFIER
@@ -27,7 +27,7 @@ message = {
         "CREATED": "Created",  # POST
         "ACCEPTED": "Request accepted",
         "NO_CONTENT": "No content",  # DELETE, PUT
-        "FAIL": "Fail",  # GENERAIL FAIL - CLIENT ERROR
+        "BAD REQUEST": "BAD REQUEST",  # GENERAIL FAIL - CLIENT ERROR
         "NO_AUTH": "Please login first",  # LOGIN NEEDED
         "FORBIDDEN": "No permission",  # ADMIN ONLY
         "NOT_FOUND": "Couldn't find what you want",  # NOT FOUND BY IDENTIFIER

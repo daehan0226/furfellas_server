@@ -57,7 +57,7 @@ class UserRoles(Resource, CustomeResponse):
             )
             if result:
                 return self.send(response_type="CREATED", result=result.id)
-            return self.send(response_type="FAIL", additional_message=message)
+            return self.send(response_type="BAD REQUEST", additional_message=message)
         return self.send(response_type="FORBIDDEN")
 
 

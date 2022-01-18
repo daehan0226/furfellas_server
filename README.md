@@ -20,15 +20,29 @@
   * 픽스쳐 - API context(test), TEST DB
 * RESTFUL API 
 ![Restful_api](https://user-images.githubusercontent.com/47915302/148562064-14def396-530d-493e-a560-882f6e8f8c22.png)
-* 응답 상태 코드
-  * 성공
-     * 200 Success
-     * 201 Created
-     * 202 Accepted(사진 비동기 구글 드라이브 업로드) 
-     * 204 No content(수정, 삭제 성공)
-  * 실패
-    * 400 Fail
-    * 401 No auth(로그인 필요)
-    * 403 Forbbiden(관리자만 접속 가능)
-    * 404 Not found (식별자를 통한 조회 시 없는 경우)
-    * 500 서버 에러
+# API DOC
+
+## Authorization
+
+| Key | Value | 
+| :--- | :--- | 
+| `Authorization` | Session key |
+
+## Responses
+
+
+## Status Codes
+
+API returns the following status codes:
+
+| Status Code | Description |
+| :--- | :--- |
+| 200 | `Success` |
+| 201 | `CREATED` |
+| 202 | `ACCEPTED` |
+| 204 | `No CONTENT` |
+| 400 | `BAD REQUEST` |
+| 401 | `NO AUTH` |
+| 403 | `FORBBIDEN` |
+| 404 | `NOT FOUND` |
+| 500 | `INTERNAL SERVER ERROR` |

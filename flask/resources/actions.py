@@ -69,7 +69,7 @@ class Actions(Resource, CustomeResponse):
             result, message = creat_action(args["name"])
             if result:
                 return self.send(response_type="CREATED", result=result.id)
-            return self.send(response_type="FAIL", additional_message=message)
+            return self.send(response_type="BAD REQUEST", additional_message=message)
         return self.send(response_type="FORBIDDEN")
 
 
@@ -94,7 +94,7 @@ class Action(Resource, CustomeResponse):
                     return self.send(response_type="NO_CONTENT")
                 if get_action_by_name(args["name"]):
                     return self.send(
-                        response_type="FAIL",
+                        response_type="BAD REQUEST",
                         additional_message=f"{args['name']} already exists ",
                     )
                 update_action(id_, args["name"])

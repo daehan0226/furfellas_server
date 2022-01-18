@@ -93,4 +93,4 @@ class OauthUser(Resource, CustomeResponse):
 
                 return self.send(response_type=response_type, result=result)
 
-        return self.send(response_type="Fail")
+        return self.send(response_type="BAD REQUEST")

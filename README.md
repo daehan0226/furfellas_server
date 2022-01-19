@@ -19,10 +19,26 @@
   * 헬퍼 함수 테스트
   * 픽스쳐 - API context(test), TEST DB
 # API DOC
-## Authorization
+<!-- ## Authorization
 | Key | Value | 
 | :--- | :--- | 
-| `Authorization` | Session key |
+| `Authorization` | Session key | -->
+
+## Status Codes
+
+API returns the following status codes:
+
+| Status Code | Description |
+| :--- | :--- |
+| 200 | `OK` |
+| 201 | `CREATED` |
+| 202 | `ACCEPTED` |
+| 204 | `No CONTENT` |
+| 400 | `BAD REQUEST` |
+| 401 | `NO AUTH` |
+| 403 | `FORBBIDEN` |
+| 404 | `NOT FOUND` |
+| 500 | `INTERNAL SERVER ERROR` |
 
 ## Endpoints
 <details>
@@ -55,18 +71,3 @@
 | Notes	|  |
 </details>
 
-## Status Codes
-
-API returns the following status codes:
-
-| Status Code | Description |
-| :--- | :--- |
-| 200 | `OK` |
-| 201 | `CREATED` |
-| 202 | `ACCEPTED` |
-| 204 | `No CONTENT` |
-| 400 | `BAD REQUEST` |
-| 401 | `NO AUTH` |
-| 403 | `FORBBIDEN` |
-| 404 | `NOT FOUND` |
-| 500 | `INTERNAL SERVER ERROR` |

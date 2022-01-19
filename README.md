@@ -11,7 +11,7 @@
 ### 기술 및 구현 간략한 소개
 * Mysql(Sqlalchemy ORM) - Docker
   * 유저, 유저 역할, 액션, 장소, 사진, 사진 타입, 할일, 세션 데이터 저장 
-  ![DB TABLES](https://user-images.githubusercontent.com/47915302/150062753-fd58b176-1d3b-42f4-b583-f83e116659da.png)
+  ![DB TABLES](https://user-images.githubusercontent.com/47915302/150068250-8911080d-79d7-4988-abd9-c88d3d180385.png)
 * Docker-compose
   * flask app - gunicorn - nginx
 * Pytest 

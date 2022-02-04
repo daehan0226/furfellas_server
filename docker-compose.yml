@@ -7,14 +7,17 @@ services:
     build: ./flask
     volumes:
       - ./flask/logs:/usr/src/flask_app/logs
-    ports:
-      - "16999:8080"
+      - ./flask/tmp:/usr/src/flask_app/tmp
+    expose:
+      - "8080"
     command: gunicorn -c ./gunicorn.conf.py "app:create_app('prod')"
 
   nginx:
     container_name: furfellas_nginx
     restart: always
     build: ./nginx
+    volumes:
+      - ./nginx/log:/var/log/nginx
     ports:
       - "8099:80"
     depends_on:

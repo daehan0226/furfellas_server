@@ -1,44 +1,70 @@
-import traceback
 import json
+import os
+import traceback
 
+import werkzeug
 from flask import Response, current_app, request
 
 from core.constants import response
 
 
-def return_401_for_no_auth(f):
+def login_required(f):
     def wrapper(*args, **kwargs):
-        user = None
         from core.models import User as UserModel
+        from core.models import UserProfile as UserProfileModel
+        from resources.sessions import get_session
 
+        user = None
+        user_profile = None
         if current_app.config["TESTING"]:
-            return f(*args, **kwargs, auth_user=UserModel.query.get(1))
-        if auth_header := request.headers.get("Authorization"):
-            from resources.sessions import get_session
+            user_profile = UserProfileModel.query.filter_by(
+                username=os.getenv("ADMIN_USER_NAME")
+            ).one()
+            user = UserModel.query.get(user_profile.user_id)
+            return f(*args, **kwargs, auth_user=user, user_profile=user_profile)
 
+        if auth_header := request.headers.get("Authorization"):
             if session := get_session(token=auth_header):
                 user = UserModel.query.get(session["user_id"])
+                try:
+                    user_profile = (
+                        UserProfileModel.query.filter_by(user_id=session["user_id"])
+                        .one()
+                        .serialize
+                    )
+                except:
+                    from resources.oauth_user import verify_google_access_token
+
+                    _, username = verify_google_access_token(auth_header)
+                    user_profile = {"username": username}
         if user is not None:
-            return f(*args, **kwargs, auth_user=user)
+            return f(*args, **kwargs, auth_user=user, user_profile=user_profile)
 
         else:
             response = CustomeResponse()
-            return response.send(response_type="NO_AUTH")
+            return response.send(response_type="NO AUTH")
 
     wrapper.__doc__ = f.__doc__
     wrapper.__name__ = f.__name__
     return wrapper
 
 
-def return_500_for_sever_error(f):
+def exception_handler(f):
     def wrapper(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except:
-            traceback.print_exc()
+        except werkzeug.exceptions.BadRequest as e:
+            print(f"400 bad request error : {e}")
             response = CustomeResponse()
             return response.send(
-                response_type="SEVER_ERROR",
+                response_type="BAD REQUEST",
+            )
+        except Exception as e:
+            traceback.print_exc()
+            print(f"500 error : {e}")
+            response = CustomeResponse()
+            return response.send(
+                response_type="SEVER ERROR",
             )
 
     wrapper.__doc__ = f.__doc__

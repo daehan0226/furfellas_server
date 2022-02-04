@@ -1,11 +1,12 @@
 from flask_restplus import Namespace, reqparse, Resource
 from core.response import (
-    return_500_for_sever_error,
-    return_401_for_no_auth,
+    exception_handler,
+    login_required,
     gen_dupilcate_keys_message,
     CustomeResponse,
 )
 from core.models import User as UserModel, UserRole as UserRoleModel
+from core.models import UserProfile as UserProfileModel
 from core.database import db
 
 api = Namespace("users", description="Users related operations")
@@ -13,41 +14,44 @@ api = Namespace("users", description="Users related operations")
 
 def create_user(args) -> dict:
     general_user_role = UserRoleModel.query.filter_by(name="general").first()
-    user = UserModel(
-        args["username"], args.get("email"), args["password"], general_user_role.id
+    user = UserModel(general_user_role.id)
+    new_user = user.create()
+    user_profile = UserProfileModel(
+        args["username"], args.get("email"), args["password"], new_user.id
     )
-    user.create()
-    return user
+    return user_profile.create()
 
 
 def get_users(args) -> list:
     if args.get("username") is not None:
-        users = UserModel.query.filter(
-            UserModel.username.like(f"%{args.get('username')}%")
+        users = UserProfileModel.query.filter(
+            UserProfileModel.username.like(f"%{args.get('username')}%")
         )
 
     elif args.get("email") is not None:
-        users = UserModel.query.filter(UserModel.email.like(f"%{args.get('email')}%"))
+        users = UserProfileModel.query.filter(
+            UserProfileModel.email.like(f"%{args.get('email')}%")
+        )
     else:
-        users = UserModel.query.all()
+        users = UserProfileModel.query.all()
     return [user.serialize for user in users]
 
 
 def update_user(user, arg) -> None:
     if arg["password"] is not None:
-        user.password = UserModel.generate_hashed_password(arg["password"])
+        user.password = UserProfileModel.generate_hashed_password(arg["password"])
     if arg["email"] is not None:
         user.email = arg["email"]
     db.session.commit()
 
 
 def get_user_by_username(username) -> dict:
-    user = UserModel.query.filter_by(username=username).first()
+    user = UserProfileModel.query.filter_by(username=username).first()
     return user.serialize if user else None
 
 
 def get_user_by_email(email) -> dict:
-    user = UserModel.query.filter_by(email=email).first()
+    user = UserProfileModel.query.filter_by(email=email).first()
     return user.serialize if user else None
 
 
@@ -82,24 +86,24 @@ parser_search.add_argument("email", type=str)
 @api.route("/")
 class Users(Resource, CustomeResponse):
     @api.expect(parser_search, parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def get(self, **kwargs):
         """Get all users"""
         if kwargs["auth_user"].is_admin():
             args = parser_search.parse_args()
-            return self.send(response_type="SUCCESS", result=get_users(args))
+            return self.send(response_type="OK", result=get_users(args))
         return self.send(response_type="FORBIDDEN")
 
     @api.doc("create a new user")
     @api.expect(parser_create)
-    @return_500_for_sever_error
+    @exception_handler
     def post(self):
         """Create an user"""
         args = parser_create.parse_args()
         if duplicate_keys := check_user_info_duplicates(args):
             return self.send(
-                response_type="FAIL",
+                response_type="BAD REQUEST",
                 additional_message=gen_dupilcate_keys_message(duplicate_keys),
             )
         result = create_user(args)
@@ -110,33 +114,33 @@ class Users(Resource, CustomeResponse):
 class User(Resource, CustomeResponse):
     @api.doc("Get a user")
     @api.expect(parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def get(self, id_, **kwargs):
         if user := UserModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin() or kwargs["auth_user"].id == id_:
-                return self.send(response_type="SUCCESS", result=user.serialize)
-        return self.send(response_type="NOT_FOUND")
+                return self.send(response_type="OK", result=user.serialize)
+        return self.send(response_type="NOT FOUND")
 
     @api.expect(parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def delete(self, id_, **kwargs):
         if UserModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 UserModel.delete_by_id(id_)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")
 
     @api.expect(parser_create, parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def put(self, id_, **kwargs):
         if UserModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_create.parse_args()
                 update_user(UserModel.query.get(id_), args)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")

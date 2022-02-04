@@ -1,19 +1,24 @@
-import traceback
+import os
 from threading import Thread
 from flask import Flask
 from flask_cors import CORS
 
 from core.database import db
 from core.config import config_by_name
+from core.models.user_profile import insert_admin_user_if_not_exist
+from resources.photos import remove_uploaded_file
 from resources.sessions import expire_old_session
 from resources import blueprint as api
-from core.errors import ConfigTypeError, NoConfigError
+from core.errors import ConfigTypeError
+
+config = None
 
 
-def db_schedulers(db_url):
-    thread = Thread(target=expire_old_session, args=(db_url,))
-    thread.daemon = True
-    thread.start()
+def start_thread_jobs():
+    thread1 = Thread(target=expire_old_session, daemon=True)
+    thread2 = Thread(target=remove_uploaded_file, daemon=True)
+    thread1.start()
+    thread2.start()
 
 
 def set_db(app):
@@ -21,14 +26,20 @@ def set_db(app):
 
         db.create_all()
         db.session.commit()
-        db_schedulers(app.config["SQLALCHEMY_DATABASE_URI"])
+        start_thread_jobs()
+        insert_admin_user_if_not_exist()
 
 
 def create_app(config_name):
     app = Flask(__name__)
+    if config_name == "prod":
+        app.config.SWAGGER_SUPPORTED_SUBMIT_METHODS = []
 
     try:
-        app.config.from_object(config_by_name[config_name])
+        app_config = config_by_name[config_name]
+        app.config.from_object(app_config)
+        global config
+        config = app_config
     except KeyError:
         raise ConfigTypeError
 

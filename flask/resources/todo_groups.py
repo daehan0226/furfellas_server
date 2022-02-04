@@ -4,8 +4,8 @@ from core.database import db
 from core.models import TodoParent, TodoChildren
 from core.response import (
     CustomeResponse,
-    return_500_for_sever_error,
-    return_401_for_no_auth,
+    exception_handler,
+    login_required,
 )
 from core.utils import convert_to_datetime
 
@@ -53,14 +53,14 @@ parser_auth.add_argument("Authorization", type=str, location="headers")
 
 @api.route("/")
 class TodoGroups(Resource, CustomeResponse):
-    @return_500_for_sever_error
+    @exception_handler
     def get(self):
         """ "Get all todo-groups"""
-        return self.send(response_type="SUCCESS", result=get_todo_groups())
+        return self.send(response_type="OK", result=get_todo_groups())
 
     @api.expect(parser_post, parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def post(self, **kwargs):
         """ "Create a new todo"""
         if kwargs["auth_user"].is_admin():
@@ -73,16 +73,16 @@ class TodoGroups(Resource, CustomeResponse):
 @api.route("/<int:id_>")
 class TodoGroup(Resource, CustomeResponse):
     @api.doc("Get a todo")
-    @return_500_for_sever_error
+    @exception_handler
     def get(self, id_):
         if todo := TodoParent.get_by_id(id_):
-            return self.send(response_type="SUCCESS", result=todo.serialize)
-        return self.send(response_type="NOT_FOUND")
+            return self.send(response_type="OK", result=todo.serialize)
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("Delete a todo group and recreate todo group")
     @api.expect(parser_auth, parser_post)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def put(self, id_, **kwargs):
         if TodoParent.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
@@ -91,16 +91,16 @@ class TodoGroup(Resource, CustomeResponse):
                 result = create_todo_group(kwargs["auth_user"].id, args)
                 return self.send(response_type="CREATED", result=result.id)
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")
 
     @api.doc("Delete a todo")
     @api.expect(parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def delete(self, id_, **kwargs):
         if TodoParent.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 TodoParent.delete_by_id(id_)
-                return self.send(response_type="NO_CONTENT")
+                return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
-        return self.send(response_type="NOT_FOUND")
+        return self.send(response_type="NOT FOUND")

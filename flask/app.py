@@ -32,6 +32,8 @@ def set_db(app):
 
 def create_app(config_name):
     app = Flask(__name__)
+    if config_name == "prod":
+        app.config.SWAGGER_SUPPORTED_SUBMIT_METHODS = []
 
     try:
         app_config = config_by_name[config_name]

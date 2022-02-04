@@ -7,8 +7,12 @@ status = {
     "NO AUTH": 401,  # LOGIN NEEDED
     "FORBIDDEN": 403,  # ADMIN ONLY
     "NOT FOUND": 404,  # NOT FOUND BY IDENTIFIER
+    "CONFLICT": 409,  # CREATE/UPDATE Fail
     "SEVER ERROR": 500,  # SEVER ERROR
 }
+
+status_code_msg = {y: x for x, y in status.items()}
+
 
 message = {
     "kr": {
@@ -20,6 +24,7 @@ message = {
         "NO AUTH": "로그인이 필요합니다.",  # LOGIN NEEDED
         "FORBIDDEN": "접근 권한이 없습니다.",  # ADMIN ONLY
         "NOT FOUND": "원하시는 데이터를 찾지 못했습니다.",  # NOT FOUND BY IDENTIFIER
+        "CONFLICT": "충돌이 발생했습니다.",
         "SEVER ERROR": "죄송합니다. 다음에 다시 시도해주세요.",  # SEVER ERROR
     },
     "en": {
@@ -31,6 +36,7 @@ message = {
         "NO AUTH": "Please login first",  # LOGIN NEEDED
         "FORBIDDEN": "No permission",  # ADMIN ONLY
         "NOT FOUND": "Couldn't find what you want",  # NOT FOUND BY IDENTIFIER
+        "CONFLICT": "Couldn't be completed because it conflicts with some rule already established",
         "SEVER ERROR": "Oops, something went wrong",  # SEVER ERROR
     },
 }

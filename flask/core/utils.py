@@ -2,6 +2,7 @@ import string
 import random
 from datetime import datetime
 from core.errors import DatetimeConvertFormatError, StringIdsFormatError
+from core.constants.response import status_code_msg
 
 
 def random_string(length):
@@ -32,3 +33,7 @@ def convert_str_ids_to_int_ids_tuple(str_ids):
             raise StringIdsFormatError
     else:
         return None
+
+
+def set_doc_responses(*responses):
+    return {response: status_code_msg[response] for response in responses}

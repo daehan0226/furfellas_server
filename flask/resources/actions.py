@@ -8,15 +8,28 @@ from core.response import (
 )
 from core.models import Action as ActionModel
 from core.database import db
+from core.utils import set_doc_responses
 
 api = Namespace("actions", description="actions related operations")
 
 parser_post = reqparse.RequestParser()
-parser_post.add_argument("name", type=str, required=True, help="action name")
-
+parser_post.add_argument(
+    "name", type=str, required=True, help="New action name", location="json"
+)
 
 parser_search = reqparse.RequestParser()
-parser_search.add_argument("name", type=str, help="action name")
+parser_search.add_argument(
+    "name", type=str, help="Find actions that includes the given name"
+)
+
+parser_auth = reqparse.RequestParser()
+parser_auth.add_argument(
+    "Authorization",
+    type=str,
+    location="headers",
+    required=True,
+    help="Only admin can create a new action",
+)
 
 
 def creat_action(name):
@@ -46,47 +59,50 @@ def update_action(id_, name):
     db.session.commit()
 
 
-parser_auth = reqparse.RequestParser()
-parser_auth.add_argument("Authorization", type=str, location="headers")
-
-
 @api.route("/")
 class Actions(Resource, CustomeResponse):
-    @api.doc("Get all actions")
+    @api.doc(responses=set_doc_responses(200, 500))
     @api.expect(parser_search)
     @return_500_for_sever_error
     def get(self):
+        """Get all actions with filter by name if given."""
         args = parser_search.parse_args()
         return self.send(response_type="OK", result=get_actions(name=args["name"]))
 
-    @api.doc("create a new action")
+    @api.doc(responses=set_doc_responses(200, 401, 403, 409, 500))
     @api.expect(parser_post, parser_auth)
     @return_401_for_no_auth
     @return_500_for_sever_error
     def post(self, **kwargs):
+        """Create a new action."""
         if kwargs["auth_user"].is_admin():
             args = parser_post.parse_args()
             result, message = creat_action(args["name"])
             if result:
                 return self.send(response_type="CREATED", result=result.id)
-            return self.send(response_type="BAD REQUEST", additional_message=message)
+            return self.send(response_type="CONFLICT", additional_message=message)
         return self.send(response_type="FORBIDDEN")
 
 
 @api.route("/<int:id_>")
-@api.param("id_", "The action identifier")
 class Action(Resource, CustomeResponse):
+    @api.doc(
+        params={"id_": "The action identifier"},
+        responses=set_doc_responses(200, 404, 500),
+    )
     @return_500_for_sever_error
     def get(self, id_):
+        """Get action by id value."""
         if action := ActionModel.get_by_id(id_):
             return self.send(response_type="OK", result=action.serialize)
         return self.send(response_type="NOT FOUND")
 
-    @api.doc("update action name")
+    @api.doc(responses=set_doc_responses(204, 401, 403, 404, 409, 500))
     @api.expect(parser_post, parser_auth)
     @return_401_for_no_auth
     @return_500_for_sever_error
     def put(self, id_, **kwargs):
+        """Update the name of the action."""
         if action := ActionModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
@@ -94,7 +110,7 @@ class Action(Resource, CustomeResponse):
                     return self.send(response_type="NO CONTENT")
                 if get_action_by_name(args["name"]):
                     return self.send(
-                        response_type="BAD REQUEST",
+                        response_type="CONFLICT",
                         additional_message=f"{args['name']} already exists ",
                     )
                 update_action(id_, args["name"])
@@ -103,11 +119,12 @@ class Action(Resource, CustomeResponse):
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT FOUND")
 
-    @api.doc("delete an action")
+    @api.doc(responses=set_doc_responses(204, 401, 403, 404, 500))
     @api.expect(parser_auth)
     @return_401_for_no_auth
     @return_500_for_sever_error
     def delete(self, id_, **kwargs):
+        """Delete the action."""
         if ActionModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 ActionModel.delete_by_id(id_)

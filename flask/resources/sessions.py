@@ -9,8 +9,8 @@ from flask_restplus import Namespace, reqparse, Resource
 
 from core.response import (
     CustomeResponse,
-    return_500_for_sever_error,
-    return_401_for_no_auth,
+    exception_handler,
+    login_required,
 )
 from core.models import User as UserModel
 from core.models import UserProfile as UserProfileModel
@@ -88,7 +88,7 @@ parser_auth.add_argument("Authorization", type=str, location="headers")
 @api.route("/")
 class Session(Resource, CustomeResponse):
     @api.expect(parser_create)
-    @return_500_for_sever_error
+    @exception_handler
     def post(self):
         """Create a session after verifying user info"""
         args = parser_create.parse_args()
@@ -107,8 +107,8 @@ class Session(Resource, CustomeResponse):
         )
 
     @api.expect(parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def delete(self, **kwargs):
         if kwargs["auth_user"] is not None:
             delete_session(id_=kwargs["auth_user"].id)
@@ -119,8 +119,8 @@ class Session(Resource, CustomeResponse):
 @api.route("/validate")
 class SessionVlidation(Resource, CustomeResponse):
     @api.expect(parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def get(self, **kwargs):
         """Check if session is valid"""
         if kwargs["auth_user"] is not None:

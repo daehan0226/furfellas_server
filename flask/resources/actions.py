@@ -3,8 +3,8 @@ from flask_restplus import Namespace, reqparse, Resource
 
 from core.response import (
     CustomeResponse,
-    return_500_for_sever_error,
-    return_401_for_no_auth,
+    exception_handler,
+    login_required,
 )
 from core.models import Action as ActionModel
 from core.database import db
@@ -63,7 +63,7 @@ def update_action(id_, name):
 class Actions(Resource, CustomeResponse):
     @api.doc(responses=set_doc_responses(200, 500))
     @api.expect(parser_search)
-    @return_500_for_sever_error
+    @exception_handler
     def get(self):
         """Get all actions with filter by name if given."""
         args = parser_search.parse_args()
@@ -71,8 +71,8 @@ class Actions(Resource, CustomeResponse):
 
     @api.doc(responses=set_doc_responses(200, 401, 403, 409, 500))
     @api.expect(parser_post, parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def post(self, **kwargs):
         """Create a new action."""
         if kwargs["auth_user"].is_admin():
@@ -90,7 +90,7 @@ class Action(Resource, CustomeResponse):
         params={"id_": "The action identifier"},
         responses=set_doc_responses(200, 404, 500),
     )
-    @return_500_for_sever_error
+    @exception_handler
     def get(self, id_):
         """Get action by id value."""
         if action := ActionModel.get_by_id(id_):
@@ -99,8 +99,8 @@ class Action(Resource, CustomeResponse):
 
     @api.doc(responses=set_doc_responses(204, 401, 403, 404, 409, 500))
     @api.expect(parser_post, parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def put(self, id_, **kwargs):
         """Update the name of the action."""
         if action := ActionModel.get_by_id(id_):
@@ -121,8 +121,8 @@ class Action(Resource, CustomeResponse):
 
     @api.doc(responses=set_doc_responses(204, 401, 403, 404, 500))
     @api.expect(parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def delete(self, id_, **kwargs):
         """Delete the action."""
         if ActionModel.get_by_id(id_):

@@ -4,8 +4,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_auth_requests
 from flask_restplus import Namespace, reqparse, Resource
 from core.response import (
-    return_500_for_sever_error,
-    return_401_for_no_auth,
+    exception_handler,
     CustomeResponse,
 )
 from core.models import User, AuthProvider, Session
@@ -56,7 +55,7 @@ def create_oauth2_user(provider_key, provider_type):
 class OauthUser(Resource, CustomeResponse):
     @api.doc("login with Oauth2")
     @api.expect(parser_create, parser_auth)
-    @return_500_for_sever_error
+    @exception_handler
     def post(self):
         """Create user by auth provider if not exist"""
         provider_type = parser_create.parse_args()["provider_type"]

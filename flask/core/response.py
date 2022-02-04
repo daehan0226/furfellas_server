@@ -1,13 +1,14 @@
+import json
 import os
 import traceback
-import json
 
+import werkzeug
 from flask import Response, current_app, request
 
 from core.constants import response
 
 
-def return_401_for_no_auth(f):
+def login_required(f):
     def wrapper(*args, **kwargs):
         from core.models import User as UserModel
         from core.models import UserProfile as UserProfileModel
@@ -48,10 +49,16 @@ def return_401_for_no_auth(f):
     return wrapper
 
 
-def return_500_for_sever_error(f):
+def exception_handler(f):
     def wrapper(*args, **kwargs):
         try:
             return f(*args, **kwargs)
+        except werkzeug.exceptions.BadRequest as e:
+            print(f"400 bad request error : {e}")
+            response = CustomeResponse()
+            return response.send(
+                response_type="BAD REQUEST",
+            )
         except Exception as e:
             traceback.print_exc()
             print(f"500 error : {e}")

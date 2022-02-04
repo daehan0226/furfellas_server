@@ -2,8 +2,8 @@ import sqlalchemy
 from flask_restplus import Namespace, reqparse, Resource
 from core.response import (
     CustomeResponse,
-    return_500_for_sever_error,
-    return_401_for_no_auth,
+    exception_handler,
+    login_required,
 )
 from core.models import UserRole
 from core.database import db
@@ -41,14 +41,14 @@ parser_auth.add_argument("Authorization", type=str, location="headers")
 @api.route("/")
 class UserRoles(Resource, CustomeResponse):
     @api.doc("Get all user_roles")
-    @return_500_for_sever_error
+    @exception_handler
     def get(self):
         return self.send(response_type="OK", result=get_user_roles())
 
     @api.doc("create a new user_role")
     @api.expect(parser_post, parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def post(self, **kwargs):
         if kwargs["auth_user"].is_admin():
             args = parser_post.parse_args()
@@ -64,7 +64,7 @@ class UserRoles(Resource, CustomeResponse):
 @api.route("/<int:id_>")
 @api.param("id_", "The user_role identifier")
 class user_role(Resource, CustomeResponse):
-    @return_500_for_sever_error
+    @exception_handler
     def get(self, id_):
         if user_role := UserRole.get_by_id(id_):
             return self.send(response_type="OK", result=user_role.serialize)
@@ -72,8 +72,8 @@ class user_role(Resource, CustomeResponse):
 
     @api.doc("update user_role name")
     @api.expect(parser_post, parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def put(self, id_, **kwargs):
         if UserRole.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
@@ -85,8 +85,8 @@ class user_role(Resource, CustomeResponse):
 
     @api.doc("delete a user_role")
     @api.expect(parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def delete(self, id_, **kwargs):
         if UserRole.get_by_id(id_):
             if kwargs["auth_user"].is_admin():

@@ -2,7 +2,7 @@ from flask_restplus import Namespace, reqparse, Resource
 from sqlalchemy import asc
 from dateutil.relativedelta import relativedelta
 from core.models import TodoChildren
-from core.response import CustomeResponse, return_500_for_sever_error
+from core.response import CustomeResponse, exception_handler
 from core.database import db
 from core.utils import convert_to_datetime
 
@@ -47,7 +47,7 @@ parser_search.add_argument("datetime_to", type=str)
 @api.route("/")
 class Todos(Resource, CustomeResponse):
     @api.expect(parser_search)
-    @return_500_for_sever_error
+    @exception_handler
     def get(self):
         """ "Get all todos"""
         args = parser_search.parse_args()

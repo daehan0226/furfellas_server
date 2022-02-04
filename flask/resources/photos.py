@@ -16,8 +16,8 @@ from core.database import db
 from core.models import Photo as PhotoModel, Action as ActionModel, Pet as PetModel
 from core.response import (
     CustomeResponse,
-    return_500_for_sever_error,
-    return_401_for_no_auth,
+    exception_handler,
+    login_required,
 )
 from core.utils import convert_to_datetime, convert_str_ids_to_int_ids_tuple
 from core.file_manager import FileManager
@@ -238,7 +238,7 @@ parser_auth.add_argument("Authorization", type=str, location="headers")
 class Photos(Resource, CustomeResponse):
     @api.doc("list_photos")
     @api.expect(parser_search)
-    @return_500_for_sever_error
+    @exception_handler
     def get(self):
         """List all photos"""
         args = parser_search.parse_args()
@@ -246,8 +246,8 @@ class Photos(Resource, CustomeResponse):
 
     @api.doc("post a photo")
     @api.expect(parser_create, parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def post(self, **kwargs):
         """Upload a photo to Onedrive"""
         if kwargs["auth_user"].is_admin():
@@ -273,7 +273,7 @@ class Photos(Resource, CustomeResponse):
 @api.route("/<id_>")
 class Photo(Resource, CustomeResponse):
     @api.doc("get_photo")
-    @return_500_for_sever_error
+    @exception_handler
     def get(self, id_):
         if photo := PhotoModel.get_by_id(id_):
             return self.send(response_type="OK", result=photo.serialize)
@@ -281,8 +281,8 @@ class Photo(Resource, CustomeResponse):
 
     @api.doc("update a photo")
     @api.expect(parser_create, parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def put(self, id_, **kwargs):
         """Upload a photo to Onedrive"""
         if PhotoModel.get_by_id(id_):
@@ -299,8 +299,8 @@ class Photo(Resource, CustomeResponse):
 
     @api.doc("delete a photo")
     @api.expect(parser_auth)
-    @return_401_for_no_auth
-    @return_500_for_sever_error
+    @login_required
+    @exception_handler
     def delete(self, id_, **kwargs):
         if PhotoModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():

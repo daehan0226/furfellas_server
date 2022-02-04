@@ -75,7 +75,6 @@ def upload_to_google_drive(folder_id, filename):
             .create(body=file_metadata, media_body=media, fields="id")
             .execute(http=http)
         )
-        print(result)
         if result["id"]:
             return result["id"]
         else:

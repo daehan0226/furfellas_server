@@ -38,7 +38,7 @@ class UserProfile(BaseModel):
     def serialize(self):
         return {
             "username": self.username,
-            "email": self.username,
+            "email": self.email,
             "user_id": self.user_id,
         }
 

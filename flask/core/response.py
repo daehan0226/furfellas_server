@@ -41,7 +41,7 @@ def return_401_for_no_auth(f):
 
         else:
             response = CustomeResponse()
-            return response.send(response_type="NO_AUTH")
+            return response.send(response_type="NO AUTH")
 
     wrapper.__doc__ = f.__doc__
     wrapper.__name__ = f.__name__
@@ -57,7 +57,7 @@ def return_500_for_sever_error(f):
             print(f"500 error : {e}")
             response = CustomeResponse()
             return response.send(
-                response_type="SEVER_ERROR",
+                response_type="SEVER ERROR",
             )
 
     wrapper.__doc__ = f.__doc__

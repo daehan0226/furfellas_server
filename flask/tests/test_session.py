@@ -24,8 +24,8 @@ def test_validate_session(client, api_helpers):
         session_url, data=json.dumps(data), headers=api_helpers.headers
     )
 
-    session = api_helpers.convert_response_to_dict(response)["result"]
+    res = api_helpers.convert_response_to_dict(response)["result"]
     session_validate_url = "/api/sessions/validate"
-    headers = {"Authorization": session, **api_helpers.headers}
+    headers = {"Authorization": res["session"], **api_helpers.headers}
     response_validate = client.get(session_validate_url, headers=headers)
     assert response_validate.status_code == 200

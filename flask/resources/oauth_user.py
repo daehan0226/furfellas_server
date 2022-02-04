@@ -39,7 +39,6 @@ def verify_google_access_token(token):
         return res["sub"], res["name"]
 
     except Exception as e:
-        print(e)
         pass
 
 

@@ -59,7 +59,7 @@ def test_create_todo_without_task(client, api_helpers, datetime_handler):
     url = "/api/todo-groups/"
 
     response = client.post(url, data=json.dumps(data), headers=api_helpers.headers)
-    assert response.status_code == 500
+    assert response.status_code == 400
 
 
 def test_delete_todo_by_id(client, api_helpers, datetime_handler):

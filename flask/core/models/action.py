@@ -20,16 +20,17 @@ class Action(BaseModel):
         return self._repr(id=self.id, name=self.name)
 
     @classmethod
-    def creat_action(cls, name):
+    def create(cls, name):
         try:
             action = cls(name)
-            action.create()
+            db.session.add(action)
+            db.session.commit()
             return action, ""
         except sqlalchemy.exc.IntegrityError as e:
             return False, f"Action name '{name}' already exists."
 
     @classmethod
-    def get_actions(cls, name=None):
+    def get_all(cls, name=None):
         if name is not None:
             actions = cls.query.filter(cls.name.like(f"%{name}%"))
         else:
@@ -41,7 +42,7 @@ class Action(BaseModel):
         return cls.query.filter_by(name=name).first()
 
     @classmethod
-    def update_action(cls, id_, name):
+    def update(cls, id_, name):
         action = cls.query.get(id_)
         action.name = name
         db.session.commit()

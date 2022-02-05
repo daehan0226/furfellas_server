@@ -36,7 +36,7 @@ message = {
         "NO AUTH": "Please login first",  # LOGIN NEEDED
         "FORBIDDEN": "No permission",  # ADMIN ONLY
         "NOT FOUND": "Couldn't find what you want",  # NOT FOUND BY IDENTIFIER
-        "CONFLICT": "Couldn't be completed because it conflicts with some rule already established",
+        "CONFLICT": "Conflict occurred",
         "SEVER ERROR": "Oops, something went wrong",  # SEVER ERROR
     },
 }

@@ -39,7 +39,7 @@ class Actions(Resource, CustomeResponse):
         """Get all actions with filter by name if given."""
         args = parser_search.parse_args()
         return self.send(
-            response_type="OK", result=ActionModel.get_actions(name=args["name"])
+            response_type="OK", result=ActionModel.get_all(name=args["name"])
         )
 
     @api.doc(responses=set_doc_responses(200, 401, 403, 409, 500))
@@ -50,7 +50,7 @@ class Actions(Resource, CustomeResponse):
         """Create a new action."""
         if kwargs["auth_user"].is_admin():
             args = parser_post.parse_args()
-            result, message = ActionModel.creat_action(args["name"])
+            result, message = ActionModel.create(args["name"])
             if result:
                 return self.send(response_type="CREATED", result=result.id)
             return self.send(response_type="CONFLICT", additional_message=message)
@@ -86,7 +86,7 @@ class Action(Resource, CustomeResponse):
                         response_type="CONFLICT",
                         additional_message=f"{args['name']} already exists ",
                     )
-                ActionModel.update_action(id_, args["name"])
+                ActionModel.update(id_, args["name"])
                 return self.send(response_type="NO CONTENT")
 
             return self.send(response_type="FORBIDDEN")

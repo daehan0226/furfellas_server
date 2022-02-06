@@ -4,6 +4,7 @@ from core.response import (
     CustomeResponse,
 )
 from core.models.auth_provider import GoogleOauthUser
+from core.utils import set_doc_responses
 
 api = Namespace("oauth_users", description="Auth provider user related operations")
 
@@ -17,6 +18,7 @@ parser_auth.add_argument("Authorization", type=str, location="headers", required
 
 @api.route("/")
 class OauthUser(Resource, CustomeResponse):
+    @api.doc(responses=set_doc_responses(200, 201, 400, 500))
     @api.expect(parser_create, parser_auth)
     @exception_handler
     def post(self):

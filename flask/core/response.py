@@ -28,12 +28,14 @@ def login_required(f):
             return user, profile
 
         def _get_user_from_gogle():
-            from resources.oauth_user import verify_google_access_token
+            from core.models.auth_provider import AuthProvider, GoogleOauthUser
 
             token = request.headers.get("Authorization")
-            user_id = get_session(token=token)["user_id"]
-            _, username = verify_google_access_token(token)
-            return UserModel.query.get(user_id), {"username": username}
+            provider_key, username = GoogleOauthUser.return_userinfo_if_token_is_valid(
+                token
+            )
+            auth = AuthProvider.query.filter_by(provider_key=provider_key).first()
+            return UserModel.query.get(auth.user_id), {"username": username}
 
         user = None
         user_profile = None

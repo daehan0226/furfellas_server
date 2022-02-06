@@ -8,7 +8,7 @@ from core.response import (
 from core.models import Action as ActionModel
 from core.utils import set_doc_responses
 
-api = Namespace("actions", description="actions related operations")
+api = Namespace("actions", description="Actions related operations")
 
 parser_post = reqparse.RequestParser()
 parser_post.add_argument(
@@ -42,7 +42,7 @@ class Actions(Resource, CustomeResponse):
             response_type="OK", result=ActionModel.get_all(name=args["name"])
         )
 
-    @api.doc(responses=set_doc_responses(200, 401, 403, 409, 500))
+    @api.doc(responses=set_doc_responses(201, 401, 403, 409, 500))
     @api.expect(parser_post, parser_auth)
     @login_required
     @exception_handler

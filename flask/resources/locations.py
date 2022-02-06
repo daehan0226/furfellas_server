@@ -1,4 +1,3 @@
-import traceback
 from flask_restplus import Namespace, reqparse, Resource
 
 from core.response import CustomeResponse
@@ -6,7 +5,7 @@ from core.models import Location as LocationModel
 from core.response import exception_handler, login_required
 from core.utils import set_doc_responses
 
-api = Namespace("locations", description="locations related operations")
+api = Namespace("locations", description="Locations related operations")
 
 parser_post = reqparse.RequestParser()
 parser_post.add_argument("key", type=str, help="location key")
@@ -32,7 +31,7 @@ class Locations(Resource, CustomeResponse):
             response_type="OK", result=LocationModel.get_all(name=args["name"])
         )
 
-    @api.doc(responses=set_doc_responses(200, 401, 403, 409, 500))
+    @api.doc(responses=set_doc_responses(201, 401, 403, 409, 500))
     @api.expect(parser_post, parser_auth)
     @login_required
     @exception_handler

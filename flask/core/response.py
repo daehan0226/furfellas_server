@@ -12,17 +12,19 @@ def login_required(f):
     def wrapper(*args, **kwargs):
         from core.models import User as UserModel
         from core.models import UserProfile as UserProfileModel
-        from resources.sessions import get_session
+        from resources.sessions import Session
 
         def _get_test_admin():
             profile = UserProfileModel.query.filter_by(
                 username=os.getenv("ADMIN_USER_NAME")
             ).one()
             user = UserModel.query.get(profile.user_id)
-            return user, profile
+            return user, profile.serialize
 
         def _get_user_from_token():
-            user_id = get_session(token=request.headers.get("Authorization"))["user_id"]
+            user_id = Session.get_session(token=request.headers.get("Authorization"))[
+                "user_id"
+            ]
             user = UserModel.query.get(user_id)
             profile = UserProfileModel.query.filter_by(user_id=user_id).one().serialize
             return user, profile

@@ -38,3 +38,15 @@ class User(BaseModel):
         if self.role_id == int(os.getenv("MANAGER_ROLE_ID")):
             return True
         return False
+
+    @classmethod
+    def create_user(cls, args) -> dict:
+        from core.models import UserRole, UserProfile
+
+        general_user_role = UserRole.query.filter_by(name="general").first()
+        user = cls(general_user_role.id)
+        new_user = user.create()
+        user_profile = UserProfile(
+            args["username"], args.get("email"), args["password"], new_user.id
+        )
+        return user_profile.create()

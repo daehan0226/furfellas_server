@@ -38,9 +38,9 @@ class Photo(BaseModel):
         self.create_datetime = columns["create_datetime"]
         self.filename = columns["filename"]
 
-    @staticmethod
-    def insert_image_id(photo_id, image_id):
-        photo = Photo.get_by_id(photo_id)
+    @classmethod
+    def insert_image_id(cls, photo_id, image_id):
+        photo = cls.get_by_id(photo_id)
         photo.image_id = image_id
         db.session.commit()
 
@@ -51,9 +51,9 @@ class Photo(BaseModel):
     def _get_upload_status_list():
         return ["waiting", "uploading", "uploaded", "fail"]
 
-    @staticmethod
-    def get_upload_status_id(status):
-        status_list = Photo._get_upload_status_list()
+    @classmethod
+    def get_upload_status_id(cls, status):
+        status_list = cls._get_upload_status_list()
         return status_list.index(status)
 
     def __repr__(self):

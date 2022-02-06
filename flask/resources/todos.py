@@ -1,41 +1,9 @@
 from flask_restplus import Namespace, reqparse, Resource
-from sqlalchemy import asc
-from dateutil.relativedelta import relativedelta
+
 from core.models import TodoChildren
 from core.response import CustomeResponse, exception_handler
-from core.database import db
-from core.utils import convert_to_datetime
 
-api = Namespace("todos", description="todos related operations")
-
-
-def get_todos(**search_filters):
-    query = db.session.query(TodoChildren)
-    if search_filters["parent_id"] is not None:
-        query = query.filter(TodoChildren.parent_id == search_filters["parent_id"])
-    if (
-        search_filters["datetime_from"] is not None
-        and search_filters["datetime_from"] != ""
-    ):
-        convert_to_datetime(search_filters["datetime_from"])
-        query = query.filter(
-            TodoChildren.datetime
-            >= convert_to_datetime(search_filters["datetime_from"])
-        )
-    if (
-        search_filters["datetime_to"] is not None
-        and search_filters["datetime_to"] != ""
-    ):
-        query = query.filter(
-            TodoChildren.datetime
-            <= (
-                convert_to_datetime(search_filters["datetime_to"])
-                + relativedelta(days=1)
-            )
-        )
-    query = query.order_by(asc(TodoChildren.datetime))
-    todos = query.all()
-    return [todo.serialize for todo in todos]
+api = Namespace("todos", description="Todos related operations")
 
 
 parser_search = reqparse.RequestParser()
@@ -49,6 +17,6 @@ class Todos(Resource, CustomeResponse):
     @api.expect(parser_search)
     @exception_handler
     def get(self):
-        """ "Get all todos"""
+        """Get all todos"""
         args = parser_search.parse_args()
-        return self.send(response_type="OK", result=get_todos(**args))
+        return self.send(response_type="OK", result=TodoChildren.get_all(**args))

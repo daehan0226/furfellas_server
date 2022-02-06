@@ -5,9 +5,9 @@ from flask_cors import CORS
 
 from core.database import db
 from core.config import config_by_name
-from core.models.user_profile import insert_admin_user_if_not_exist
+from core.models.user_profile import UserProfile
+from core.models.session import Session
 from resources.photos import remove_uploaded_file
-from resources.sessions import expire_old_session
 from resources import blueprint as api
 from core.errors import ConfigTypeError
 
@@ -15,7 +15,7 @@ config = None
 
 
 def start_thread_jobs():
-    thread1 = Thread(target=expire_old_session, daemon=True)
+    thread1 = Thread(target=Session.expire_old_session, daemon=True)
     thread2 = Thread(target=remove_uploaded_file, daemon=True)
     thread1.start()
     thread2.start()
@@ -27,7 +27,7 @@ def set_db(app):
         db.create_all()
         db.session.commit()
         start_thread_jobs()
-        insert_admin_user_if_not_exist()
+        UserProfile.insert_admin_user_if_not_exist()
 
 
 def create_app(config_name):

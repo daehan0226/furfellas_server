@@ -1,4 +1,5 @@
 import os
+import sqlalchemy
 from sqlalchemy import event
 from core.database import db
 from core.models.base import BaseModel
@@ -16,6 +17,30 @@ class UserRole(BaseModel):
 
     def __repr__(self):
         return self._repr(id=self.id, name=self.name, description=self.description)
+
+    @classmethod
+    def create_user_role(cls, name, description):
+        try:
+            user_role = cls(name, description)
+            user_role.create()
+            return user_role, ""
+        except sqlalchemy.exc.IntegrityError as e:
+            return False, f"User_role name '{name}' already exists."
+
+    @classmethod
+    def get_by_name(cls, name) -> dict:
+        user_role = cls.query.filter_by(name=name).first()
+        return user_role.serialize if user_role else None
+
+    @classmethod
+    def get_user_roles(cls):
+        return [user_role.serialize for user_role in cls.query.all()]
+
+    @classmethod
+    def update_user_role(cls, id_, name):
+        user_role = cls.query.get(id_)
+        user_role.name = name
+        db.session.commit()
 
 
 @event.listens_for(UserRole.__table__, "after_create")

@@ -27,7 +27,6 @@ class CustomApi(Api):
 
 api = CustomApi(blueprint, title="Fur fellas API", version="1.0", description="")
 
-api.add_namespace(photos)
 api.add_namespace(oauth_user)
 api.add_namespace(actions)
 api.add_namespace(locations)
@@ -37,3 +36,4 @@ api.add_namespace(sessions)
 api.add_namespace(users)
 api.add_namespace(user_roles)
 api.add_namespace(pets)
+api.add_namespace(photos)

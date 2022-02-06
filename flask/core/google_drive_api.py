@@ -1,11 +1,9 @@
 from apiclient.http import MediaFileUpload
 from queue import Queue
-from threading import Thread, Event
+from threading import Event
 import concurrent.futures
 
-from core.database import db
 from core.errors import GoogleUploadError, GoogleFileNotFoundError
-from core.models.photo import Photo
 
 from apiclient import errors
 

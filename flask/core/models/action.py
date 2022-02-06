@@ -46,3 +46,8 @@ class Action(BaseModel):
         action = cls.query.get(id_)
         action.name = name
         db.session.commit()
+
+    @classmethod
+    def get_action_model_list_from_str_action_ids(cls, str_action_ids):
+        action_ids = str_action_ids.split(",")
+        return [cls.query.get(int(action_id)) for action_id in action_ids]

@@ -20,7 +20,7 @@ SESSION_VALID_TIME_SECONDS = int(os.getenv("SESSION_VALID_TIME_HOURS")) * 3600
 class Session(BaseModel):
     __tablename__ = "session"
     id = db.Column(db.Integer, primary_key=True)
-    token = db.Column(db.String(1000), unique=True)
+    token = db.Column(db.String(300), unique=True)
     user_id = db.Column(
         db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False
     )

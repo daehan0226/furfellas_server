@@ -5,9 +5,7 @@ from flask_cors import CORS
 
 from core.database import db
 from core.config import config_by_name
-from core.models.user_profile import UserProfile
-from core.models.session import Session
-from resources.photos import remove_uploaded_file
+from core.models import UserProfile, Session, Photo
 from resources import blueprint as api
 from core.errors import ConfigTypeError
 
@@ -16,7 +14,7 @@ config = None
 
 def start_thread_jobs():
     thread1 = Thread(target=Session.expire_old_session, daemon=True)
-    thread2 = Thread(target=remove_uploaded_file, daemon=True)
+    thread2 = Thread(target=Photo.remove_uploaded_file, daemon=True)
     thread1.start()
     thread2.start()
 

@@ -84,6 +84,11 @@ class Pet(BaseModel):
         pet.name = name
         db.session.commit()
 
+    @classmethod
+    def get_pet_model_list_from_str_action_ids(cls, str_pet_ids):
+        pet_ids = str_pet_ids.split(",")
+        return [cls.query.get(int(pet_id)) for pet_id in pet_ids]
+
 
 @event.listens_for(Pet.__table__, "after_create")
 def insert_initial_values(*args, **kwargs):

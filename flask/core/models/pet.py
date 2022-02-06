@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import sqlalchemy
 from sqlalchemy import event
 from sqlalchemy.orm import relationship
 from core.database import db, association_table_photo_pet
@@ -58,6 +59,35 @@ class Pet(BaseModel):
             "birthday": self.birthday.isoformat(),
             "color": self.color,
         }
+
+    @classmethod
+    def create(cls, pet_columns):
+        try:
+            pet = cls(**pet_columns)
+            pet.create()
+            return pet, ""
+        except sqlalchemy.exc.IntegrityError as e:
+            return False, f"Pet name '{pet['name']}' already exists."
+
+    @classmethod
+    def get_pets(cls) -> list:
+        return [pet.serialize for pet in cls.query.all()]
+
+    @classmethod
+    def get_by_name(cls, name) -> dict:
+        pet = cls.query.filter_by(name=name).first()
+        return pet.serialize if pet else None
+
+    @classmethod
+    def update_name(cls, id_, name):
+        pet = cls.query.get(id_)
+        pet.name = name
+        db.session.commit()
+
+    @classmethod
+    def get_pet_model_list_from_str_action_ids(cls, str_pet_ids):
+        pet_ids = str_pet_ids.split(",")
+        return [cls.query.get(int(pet_id)) for pet_id in pet_ids]
 
 
 @event.listens_for(Pet.__table__, "after_create")

@@ -1,4 +1,3 @@
-import sqlalchemy
 from flask_restplus import Namespace, reqparse, Resource
 from core.response import (
     CustomeResponse,
@@ -6,7 +5,7 @@ from core.response import (
     login_required,
 )
 from core.models import UserRole
-from core.database import db
+from core.utils import set_doc_responses
 
 api = Namespace("user-roles", description="User role related operations")
 
@@ -15,44 +14,27 @@ parser_post.add_argument("name", type=str, help="user_role name")
 parser_post.add_argument("description", type=str, help="user_role description")
 
 
-def create_user_role(name, description):
-    try:
-        user_role = UserRole(name, description)
-        user_role.create()
-        return user_role, ""
-    except sqlalchemy.exc.IntegrityError as e:
-        return False, f"User_role name '{name}' already exists."
-
-
-def get_user_roles():
-    return [user_role.serialize for user_role in UserRole.query.all()]
-
-
-def update_user_role(id_, name):
-    user_role = UserRole.query.get(id_)
-    user_role.name = name
-    db.session.commit()
-
-
 parser_auth = reqparse.RequestParser()
 parser_auth.add_argument("Authorization", type=str, location="headers")
 
 
 @api.route("/")
 class UserRoles(Resource, CustomeResponse):
-    @api.doc("Get all user_roles")
+    @api.doc(responses=set_doc_responses(200, 500))
     @exception_handler
     def get(self):
-        return self.send(response_type="OK", result=get_user_roles())
+        """Get all user roles."""
+        return self.send(response_type="OK", result=UserRole.get_user_roles())
 
-    @api.doc("create a new user_role")
+    @api.doc(responses=set_doc_responses(201, 400, 403, 500))
     @api.expect(parser_post, parser_auth)
     @login_required
     @exception_handler
     def post(self, **kwargs):
+        """create a new user role"""
         if kwargs["auth_user"].is_admin():
             args = parser_post.parse_args()
-            result, message = create_user_role(
+            result, message = UserRole.create_user_role(
                 args["name"], args.get("description") or ""
             )
             if result:
@@ -62,32 +44,43 @@ class UserRoles(Resource, CustomeResponse):
 
 
 @api.route("/<int:id_>")
-@api.param("id_", "The user_role identifier")
 class user_role(Resource, CustomeResponse):
+    @api.doc(
+        params={"id_": "The user role identifier"},
+        responses=set_doc_responses(200, 404, 500),
+    )
     @exception_handler
     def get(self, id_):
+        """Get user role by id."""
         if user_role := UserRole.get_by_id(id_):
             return self.send(response_type="OK", result=user_role.serialize)
         return self.send(response_type="NOT FOUND")
 
-    @api.doc("update user_role name")
+    @api.doc(responses=set_doc_responses(204, 401, 403, 404, 409, 500))
     @api.expect(parser_post, parser_auth)
     @login_required
     @exception_handler
     def put(self, id_, **kwargs):
+        """Update the name of the user role."""
         if UserRole.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_post.parse_args()
-                update_user_role(id_, args["name"])
+                if UserRole.get_by_name(args["name"]):
+                    return self.send(
+                        response_type="CONFLICT",
+                        additional_message=f"{args['name']} already exists ",
+                    )
+                UserRole.update_user_role(id_, args["name"])
                 return self.send(response_type="NO CONTENT")
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT FOUND")
 
-    @api.doc("delete a user_role")
+    @api.doc(responses=set_doc_responses(204, 401, 403, 404, 500))
     @api.expect(parser_auth)
     @login_required
     @exception_handler
     def delete(self, id_, **kwargs):
+        """Delete the user role."""
         if UserRole.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 UserRole.delete_by_id(id_)

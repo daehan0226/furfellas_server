@@ -1,8 +1,11 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
+from sqlalchemy import asc
+
 from core.database import db
 from core.models.base import BaseModel
+from core.utils import convert_to_datetime
 
 
 class TodoParent(BaseModel):
@@ -71,6 +74,33 @@ class TodoParent(BaseModel):
             "user_id": self.user_id,
         }
 
+    @classmethod
+    def create_todo_group(cls, user_id, arg):
+        start_datetime = convert_to_datetime(arg["start_datetime"])
+        finish_datetime = (
+            convert_to_datetime(arg["finish_datetime"])
+            if arg.get("finish_datetime")
+            else start_datetime
+        )
+
+        todo_parent = cls(
+            arg["task"],
+            arg.get("repeat_interval") or "",
+            start_datetime,
+            finish_datetime,
+            user_id,
+        )
+        todo_parent.create()
+
+        todo_children = todo_parent.set_todo_children()
+        TodoChildren.create_all(todo_children)
+
+        return todo_parent
+
+    @classmethod
+    def get_all_groups(cls):
+        return [todo.serialize for todo in cls.query.all()]
+
 
 class TodoChildren(BaseModel):
     __tablename__ = "todo_children"
@@ -91,11 +121,9 @@ class TodoChildren(BaseModel):
             parent_id=self.parent_id,
         )
 
-    @staticmethod
-    def create_all(objects):
-        db.session.add_all(
-            [TodoChildren(obj["datetime"], obj["parent_id"]) for obj in objects]
-        )
+    @classmethod
+    def create_all(cls, objects):
+        db.session.add_all([cls(obj["datetime"], obj["parent_id"]) for obj in objects])
         db.session.commit()
 
     @property
@@ -111,3 +139,31 @@ class TodoChildren(BaseModel):
             "datetime": self.datetime.isoformat(),
             "task": todo_parent.task,
         }
+
+    @classmethod
+    def get_all(cls, **search_filters):
+        query = db.session.query(cls)
+        if search_filters["parent_id"] is not None:
+            query = query.filter(cls.parent_id == search_filters["parent_id"])
+        if (
+            search_filters["datetime_from"] is not None
+            and search_filters["datetime_from"] != ""
+        ):
+            convert_to_datetime(search_filters["datetime_from"])
+            query = query.filter(
+                cls.datetime >= convert_to_datetime(search_filters["datetime_from"])
+            )
+        if (
+            search_filters["datetime_to"] is not None
+            and search_filters["datetime_to"] != ""
+        ):
+            query = query.filter(
+                cls.datetime
+                <= (
+                    convert_to_datetime(search_filters["datetime_to"])
+                    + relativedelta(days=1)
+                )
+            )
+        query = query.order_by(asc(cls.datetime))
+        todos = query.all()
+        return [todo.serialize for todo in todos]

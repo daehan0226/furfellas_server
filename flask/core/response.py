@@ -10,21 +10,21 @@ from core.constants import response
 
 def login_required(f):
     def wrapper(*args, **kwargs):
-        from core.models import User as UserModel
-        from core.models import UserProfile as UserProfileModel
-        from resources.sessions import get_session
+        from core.models import User, Session, UserProfile
 
         def _get_test_admin():
-            profile = UserProfileModel.query.filter_by(
+            profile = UserProfile.query.filter_by(
                 username=os.getenv("ADMIN_USER_NAME")
             ).one()
-            user = UserModel.query.get(profile.user_id)
-            return user, profile
+            user = User.query.get(profile.user_id)
+            return user, profile.serialize
 
         def _get_user_from_token():
-            user_id = get_session(token=request.headers.get("Authorization"))["user_id"]
-            user = UserModel.query.get(user_id)
-            profile = UserProfileModel.query.filter_by(user_id=user_id).one().serialize
+            user_id = Session.get_session(token=request.headers.get("Authorization"))[
+                "user_id"
+            ]
+            user = User.query.get(user_id)
+            profile = UserProfile.query.filter_by(user_id=user_id).one().serialize
             return user, profile
 
         def _get_user_from_gogle():
@@ -35,7 +35,7 @@ def login_required(f):
                 token
             )
             auth = AuthProvider.query.filter_by(provider_key=provider_key).first()
-            return UserModel.query.get(auth.user_id), {"username": username}
+            return User.query.get(auth.user_id), {"username": username}
 
         user = None
         user_profile = None
@@ -49,7 +49,7 @@ def login_required(f):
         else:
             try:
                 user, user_profile = _get_user_from_token()
-            except:
+            except Exception as e:
                 try:
                     user, user_profile = _get_user_from_gogle()
                 except:

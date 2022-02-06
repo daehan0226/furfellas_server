@@ -28,6 +28,7 @@ from core.google_drive_api import (
     upload_to_google_drive,
 )
 
+from core.utils import set_doc_responses
 
 APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
 dotenv_path = os.path.join(APP_ROOT, ".env")
@@ -236,7 +237,7 @@ parser_auth.add_argument("Authorization", type=str, location="headers")
 
 @api.route("/")
 class Photos(Resource, CustomeResponse):
-    @api.doc("list_photos")
+    @api.doc(responses=set_doc_responses(200, 500))
     @api.expect(parser_search)
     @exception_handler
     def get(self):
@@ -244,7 +245,7 @@ class Photos(Resource, CustomeResponse):
         args = parser_search.parse_args()
         return self.send(response_type="OK", result=get_photos(args))
 
-    @api.doc("post a photo")
+    @api.doc(responses=set_doc_responses(202, 400, 401, 403, 500))
     @api.expect(parser_create, parser_auth)
     @login_required
     @exception_handler
@@ -272,19 +273,21 @@ class Photos(Resource, CustomeResponse):
 
 @api.route("/<id_>")
 class Photo(Resource, CustomeResponse):
+    @api.doc(responses=set_doc_responses(200, 404, 500))
     @api.doc("get_photo")
     @exception_handler
     def get(self, id_):
+        """Get a photo by id"""
         if photo := PhotoModel.get_by_id(id_):
             return self.send(response_type="OK", result=photo.serialize)
         return self.send(response_type="NOT FOUND")
 
-    @api.doc("update a photo")
+    @api.doc(responses=set_doc_responses(204, 400, 401, 403, 404, 500))
     @api.expect(parser_create, parser_auth)
     @login_required
     @exception_handler
     def put(self, id_, **kwargs):
-        """Upload a photo to Onedrive"""
+        """Update photo info"""
         if PhotoModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 args = parser_create.parse_args()
@@ -297,11 +300,12 @@ class Photo(Resource, CustomeResponse):
             return self.send(response_type="FORBIDDEN")
         return self.send(response_type="NOT FOUND")
 
-    @api.doc("delete a photo")
+    @api.doc(responses=set_doc_responses(204, 401, 403, 404, 500))
     @api.expect(parser_auth)
     @login_required
     @exception_handler
     def delete(self, id_, **kwargs):
+        "Delete a photo by id"
         if PhotoModel.get_by_id(id_):
             if kwargs["auth_user"].is_admin():
                 PhotoModel.delete_by_id(id_)

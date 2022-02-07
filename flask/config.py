@@ -24,6 +24,7 @@ class Config:
 
 
 class ProductionConfig(Config):
+    SWAGGER_SUPPORTED_SUBMIT_METHODS = []
     ENV = "production"
     HOST = os.getenv("HOST")
     PORT = os.getenv("PORT")

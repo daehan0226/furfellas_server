@@ -33,14 +33,10 @@ def set_db(app):
         UserProfile.insert_admin_user_if_not_exist()
 
 
-def create_app(config_name=None):
+def create_app(config_name="dev"):
     app = Flask(__name__)
-    if config_name == "prod":
-        app.config.SWAGGER_SUPPORTED_SUBMIT_METHODS = []
 
     try:
-        if config_name is None:
-            config_name = "dev"
         app_config = config_by_name[config_name]
         app.config.from_object(app_config)
         global config

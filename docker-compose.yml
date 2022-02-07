@@ -28,6 +28,6 @@ services:
       context: ./flask
     hostname: worker
     entrypoint: celery
-    command: -A celery_worker.celery worker --loglevel=info -f ./celery.logs
+    command: -A celery_worker.celery worker --loglevel=info -f ./celery/task.log
     volumes:
-      - ./flask/celery.logs:/usr/src/flask_app/celery.logs
+      - ./flask/celery:/usr/src/flask_app/celery

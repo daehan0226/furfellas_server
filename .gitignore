@@ -5,6 +5,8 @@ flask/test.db
 flask/alembic/*
 flask/alembic.ini
 
+*.logs
+*.log
 *.json
 *.pyc
 .env

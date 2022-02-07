@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime
-from core.utils import convert_to_datetime, convert_str_ids_to_int_ids_tuple
-from core.errors import DatetimeConvertFormatError
+from app.core.utils import convert_to_datetime, convert_str_ids_to_int_ids_tuple
+from app.core.errors import DatetimeConvertFormatError
 
 
 def test_convert_to_datetime():

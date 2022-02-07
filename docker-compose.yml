@@ -22,3 +22,12 @@ services:
       - "8099:80"
     depends_on:
       - furfellas_app_server
+
+  worker:
+    build:
+      context: ./flask
+    hostname: worker
+    entrypoint: celery
+    command: -A celery_worker.celery worker --loglevel=info -f ./celery/task.log
+    volumes:
+      - ./flask/celery:/usr/src/flask_app/celery

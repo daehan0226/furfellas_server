@@ -1,7 +1,7 @@
 import os
 import os.path
 import shutil
-from core.file_manager import FileManager
+from app.core.file_manager import FileManager
 
 
 def test_remove_file():

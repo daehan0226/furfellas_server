@@ -10,7 +10,7 @@ from app.core.errors import ConfigTypeError
 
 config = None
 
-celery = Celery(__name__, broker=Config.CELERY_BROKER_URL)
+celery = Celery(__name__, broker=Config.broker_url)
 
 
 def start_thread_jobs():

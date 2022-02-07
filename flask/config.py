@@ -16,8 +16,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.getenv("SECRET_KEY")
 
-    CELERY_BROKER_URL = os.getenv("REDIS_URL")
-    CELERY_RESULT_BACKEND = os.getenv("REDIS_URL")
+    broker_url = os.getenv("REDIS_URL")
+    result_backend = os.getenv("REDIS_URL")
 
     SESSION_CHECK_TIME_HOURS = 8
     SESSION_VALID_TIME_HOURS = 1

@@ -3,7 +3,7 @@ import json
 from dateutil.relativedelta import relativedelta
 
 from app import create_app
-from core.database import db
+from app.core.database import db
 
 
 @pytest.fixture

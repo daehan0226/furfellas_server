@@ -10,7 +10,7 @@ from app.core.errors import FileRemoveError, FileSaveError, FileExtractExtention
 
 
 class FileManager:
-    tmp_dir = os.path.join(dirname(dirname(abspath(__file__))), "tmp")
+    tmp_dir = os.path.join(dirname(dirname(dirname(abspath(__file__)))), "tmp")
 
     def __init__(self, file):
         self.file = file

@@ -1,2 +1,2 @@
 echo building docker containers
-docker-compose up -d --build --force-recreate --remove-orphans
+COMPOSE_HTTP_TIMEOUT=600 docker-compose up -d --build --force-recreate --remove-orphans

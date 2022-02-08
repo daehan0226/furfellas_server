@@ -11,10 +11,14 @@ api = Namespace("oauth_users", description="Auth provider user related operation
 
 
 parser_create = reqparse.RequestParser()
-parser_create.add_argument("provider_type", type=str, required=True)
+parser_create.add_argument(
+    "provider_type", type=str, required=True, help="Providers(google)"
+)
 
 parser_auth = reqparse.RequestParser()
-parser_auth.add_argument("Authorization", type=str, location="headers", required=True)
+parser_auth.add_argument(
+    "Authorization", type=str, location="headers", required=True, help="Session token"
+)
 
 
 @api.route("/")

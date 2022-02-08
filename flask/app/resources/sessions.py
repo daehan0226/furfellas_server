@@ -16,7 +16,9 @@ parser_create.add_argument("username", type=str, required=True, help="Unique use
 parser_create.add_argument("password", type=str, required=True, help="Password")
 
 parser_auth = reqparse.RequestParser()
-parser_auth.add_argument("Authorization", type=str, location="headers")
+parser_auth.add_argument(
+    "Authorization", type=str, location="headers", help="Session token"
+)
 
 
 @api.route("/")

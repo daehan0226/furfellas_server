@@ -15,18 +15,22 @@ api = Namespace("users", description="Users related operations")
 
 parser_create = reqparse.RequestParser()
 parser_create.add_argument("username", type=str, required=True, help="Unique user name")
-parser_create.add_argument("email", type=str)
+parser_create.add_argument("email", type=str, help="User email")
 parser_create.add_argument("password", type=str, required=True, help="Password")
 
 parser_delete = reqparse.RequestParser()
-parser_delete.add_argument("ids", type=str, required=True, action="split")
+parser_delete.add_argument(
+    "ids", type=str, required=True, action="split", help="User ids(1,2,34)"
+)
 
 parser_auth = reqparse.RequestParser()
-parser_auth.add_argument("Authorization", type=str, location="headers")
+parser_auth.add_argument(
+    "Authorization", type=str, location="headers", help="Session token"
+)
 
 parser_search = reqparse.RequestParser()
 parser_search.add_argument("username", type=str, help="Unique user name")
-parser_search.add_argument("email", type=str)
+parser_search.add_argument("email", type=str, help="User email")
 
 
 @api.route("/")
@@ -59,12 +63,10 @@ class Users(Resource, CustomeResponse):
         return self.send(response_type="CREATED", result=result.id)
 
 
+@api.doc(params={"id_": "The user identifier"})
 @api.route("/<int:id_>")
 class User(Resource, CustomeResponse):
-    @api.doc(
-        params={"id_": "The user identifier"},
-        responses=set_doc_responses(200, 401, 404, 500),
-    )
+    @api.doc(responses=set_doc_responses(200, 401, 404, 500))
     @api.expect(parser_auth)
     @login_required
     @exception_handler

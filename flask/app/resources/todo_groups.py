@@ -13,10 +13,16 @@ api = Namespace("todo-groups", description="Todo groups related operations")
 
 
 parser_post = reqparse.RequestParser()
-parser_post.add_argument("task", type=str, required=True)
-parser_post.add_argument("repeat_interval", type=str)
-parser_post.add_argument("start_datetime", type=str, required=True)
-parser_post.add_argument("finish_datetime", type=str)
+parser_post.add_argument("task", type=str, required=True, help="Task name")
+parser_post.add_argument(
+    "repeat_interval", type=str, help="Repreat interval(7d, 14d, 2m, 3y)"
+)
+parser_post.add_argument(
+    "start_datetime", type=str, required=True, help="Task start date(year-month-date)"
+)
+parser_post.add_argument(
+    "finish_datetime", type=str, help="Task end date(year-month-date)"
+)
 
 
 parser_auth = reqparse.RequestParser()
@@ -44,12 +50,10 @@ class TodoGroups(Resource, CustomeResponse):
         return self.send(response_type="FORBIDDEN")
 
 
+@api.doc(params={"id_": "The action identifier"})
 @api.route("/<int:id_>")
 class TodoGroup(Resource, CustomeResponse):
-    @api.doc(
-        params={"id_": "The action identifier"},
-        responses=set_doc_responses(200, 404, 500),
-    )
+    @api.doc(responses=set_doc_responses(200, 404, 500))
     @exception_handler
     def get(self, id_):
         """Get todo by id."""

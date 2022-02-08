@@ -13,11 +13,13 @@
   * 유저, 유저 역할, 액션, 장소, 사진, 사진 타입, 할일, 세션 데이터 저장 
   ![DB TABLES](https://user-images.githubusercontent.com/47915302/150068250-8911080d-79d7-4988-abd9-c88d3d180385.png)
 * Docker-compose
-  * flask app - gunicorn - nginx
+  * flask app - gunicorn - nginx - celery worker
 * Pytest 
   * 각 엔드포인트 테스트(리소스 생성,추가,수정,삭제)
   * 헬퍼 함수 테스트
   * 픽스쳐 - API context(test), TEST DB
+* 이미지 구글 드라이브에 저장
+  * 이미지 업로드시 celery 잡 실행 후 비동기 응답 처리
 # API DOC
 <!-- ## Authorization
 | Key | Value | 

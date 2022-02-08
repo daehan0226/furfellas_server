@@ -25,8 +25,7 @@ parser_auth.add_argument(
     "Authorization",
     type=str,
     location="headers",
-    required=True,
-    help="Only admin can create a new action",
+    help="Session token",
 )
 
 
@@ -57,12 +56,10 @@ class Actions(Resource, CustomeResponse):
         return self.send(response_type="FORBIDDEN")
 
 
+@api.doc(params={"id_": "The action identifier"})
 @api.route("/<int:id_>")
 class Action(Resource, CustomeResponse):
-    @api.doc(
-        params={"id_": "The action identifier"},
-        responses=set_doc_responses(200, 404, 500),
-    )
+    @api.doc(responses=set_doc_responses(200, 404, 500))
     @exception_handler
     def get(self, id_):
         """Get action by id value."""

@@ -51,7 +51,6 @@ class GoogleDrive:
     @celery.task
     def upload(cls, folder_id, filename):
         service, http = cls.get_google_service_and_http_instance()
-        print(folder_id, filename)
         try:
             file_metadata = {
                 "name": filename,

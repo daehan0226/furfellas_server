@@ -7,9 +7,9 @@ api = Namespace("todos", description="Todos related operations")
 
 
 parser_search = reqparse.RequestParser()
-parser_search.add_argument("parent_id", type=int)
-parser_search.add_argument("datetime_from", type=str)
-parser_search.add_argument("datetime_to", type=str)
+parser_search.add_argument("parent_id", type=int, help="Task group id")
+parser_search.add_argument("datetime_from", type=str, help="Search start date")
+parser_search.add_argument("datetime_to", type=str, help="Search end date")
 
 
 @api.route("/")

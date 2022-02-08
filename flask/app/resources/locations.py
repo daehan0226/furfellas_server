@@ -8,15 +8,17 @@ from app.core.utils import set_doc_responses
 api = Namespace("locations", description="Locations related operations")
 
 parser_post = reqparse.RequestParser()
-parser_post.add_argument("key", type=str, help="location key")
-parser_post.add_argument("name", type=str, required=True, help="location name")
+parser_post.add_argument(
+    "name", type=str, required=True, location="json", help="New location name"
+)
 
 parser_search = reqparse.RequestParser()
-parser_search.add_argument("name", type=str, help="location name")
-
+parser_search.add_argument("name", type=str, help="Location name")
 
 parser_auth = reqparse.RequestParser()
-parser_auth.add_argument("Authorization", type=str, location="headers")
+parser_auth.add_argument(
+    "Authorization", type=str, location="headers", help="Session token"
+)
 
 
 @api.route("/")
@@ -47,10 +49,10 @@ class Locations(Resource, CustomeResponse):
         return self.send(response_type="FORBIDDEN")
 
 
+@api.doc(params={"id_": "The location identifier"})
 @api.route("/<int:id_>")
 class Location(Resource, CustomeResponse):
     @api.doc(
-        params={"id_": "The location identifier"},
         responses=set_doc_responses(200, 404, 500),
     )
     @exception_handler

@@ -14,17 +14,20 @@ api = Namespace("photos", description="Photos related operations")
 
 
 parser_search = reqparse.RequestParser()
-parser_search.add_argument("action_ids", type=str, location="args", help="action ids")
+parser_search.add_argument("action_ids", type=str, location="args", help="Action ids")
 
-parser_search.add_argument("pet_ids", type=str, location="args", help="pet ids")
+parser_search.add_argument("pet_ids", type=str, location="args", help="Pet ids")
 parser_search.add_argument(
-    "location_ids", type=str, help="location ids", location="args"
+    "location_ids", type=str, help="Location ids", location="args"
 )
 parser_search.add_argument(
-    "start_datetime", type=str, help="search start date", location="args"
+    "start_datetime",
+    type=str,
+    help="Search start date(year-month-date)",
+    location="args",
 )
 parser_search.add_argument(
-    "end_datetime", type=str, help="search end date", location="args"
+    "end_datetime", type=str, help="Search end date(year-month-date)", location="args"
 )
 parser_search.add_argument(
     "size", type=str, help="Photo count per page", location="args"
@@ -33,22 +36,29 @@ parser_search.add_argument("page", type=str, help="Photo page", location="args")
 
 
 parser_create = reqparse.RequestParser()
-parser_create.add_argument("file", type=FileStorage, location="files")
-parser_create.add_argument("action_ids", type=str, location="form", help="action ids")
-parser_create.add_argument("pet_ids", type=str, location="form", help="pet ids")
 parser_create.add_argument(
-    "location_id", type=int, help="location ids", location="form"
+    "file", type=FileStorage, location="files", help="Photo file"
+)
+parser_create.add_argument("action_ids", type=str, location="form", help="Action ids")
+parser_create.add_argument("pet_ids", type=str, location="form", help="Pet ids")
+parser_create.add_argument(
+    "location_id", type=int, help="Location ids", location="form"
 )
 parser_create.add_argument(
-    "description", type=str, help="photo description", location="form"
+    "description", type=str, help="Photo description", location="form"
 )
 parser_create.add_argument(
-    "create_datetime", type=str, help="date of photo taken", location="form"
+    "create_datetime",
+    type=str,
+    help="Date of photo taken(year-month-date)",
+    location="form",
 )
 
 
 parser_auth = reqparse.RequestParser()
-parser_auth.add_argument("Authorization", type=str, location="headers")
+parser_auth.add_argument(
+    "Authorization", type=str, location="headers", help="Session token"
+)
 
 
 @api.route("/")
@@ -87,6 +97,7 @@ class Photos(Resource, CustomeResponse):
         return self.send(response_type="FORBIDDEN")
 
 
+@api.doc(params={"id_": "The photo identifier"})
 @api.route("/<id_>")
 class Photo(Resource, CustomeResponse):
     @api.doc(responses=set_doc_responses(200, 404, 500))

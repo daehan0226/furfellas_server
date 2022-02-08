@@ -21,11 +21,6 @@
 * 이미지 구글 드라이브에 저장
   * 이미지 업로드시 celery 잡 실행 후 비동기 응답 처리
 # API DOC
-<!-- ## Authorization
-| Key | Value | 
-| :--- | :--- | 
-| `Authorization` | Session key | -->
-
 ## Status Codes
 
 API returns the following status codes:

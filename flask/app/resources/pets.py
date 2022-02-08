@@ -11,18 +11,20 @@ from app.core.utils import set_doc_responses
 api = Namespace("pets", description="Pets related operations")
 
 parser_post = reqparse.RequestParser()
-parser_post.add_argument("name", type=str, required=True)
-parser_post.add_argument("weight", type=int, required=True)
-parser_post.add_argument("birthday", type=str, required=True)
-parser_post.add_argument("color", type=str, help="CSS HEX", required=True)
-parser_post.add_argument("intro", type=str, required=True)
-parser_post.add_argument("photo_id", type=str)
+parser_post.add_argument("name", type=str, required=True, help="Pets name")
+parser_post.add_argument("weight", type=int, required=True, help="Pets weight")
+parser_post.add_argument("birthday", type=str, required=True, help="Pets birthday")
+parser_post.add_argument("color", type=str, required=True, help="Pets color(CSS HEX)")
+parser_post.add_argument("intro", type=str, required=True, help="Pets desc")
+parser_post.add_argument("photo_id", type=str, help="Photo id for aprofile photo")
 
 parser_search = reqparse.RequestParser()
-parser_search.add_argument("name", type=str, help="pet name")
+parser_search.add_argument("name", type=str, help="Pet name")
 
 parser_auth = reqparse.RequestParser()
-parser_auth.add_argument("Authorization", type=str, location="headers")
+parser_auth.add_argument(
+    "Authorization", type=str, location="headers", help="Session token"
+)
 
 
 @api.route("/")
@@ -56,14 +58,13 @@ class Pets(Resource, CustomeResponse):
         return self.send(response_type="FORBIDDEN")
 
 
+@api.doc(params={"id_": "The pet identifier"})
 @api.route("/<int:id_>")
 class Pet(Resource, CustomeResponse):
-    @api.doc(
-        params={"id_": "The pet identifier"},
-        responses=set_doc_responses(200, 404, 500),
-    )
+    @api.doc(responses=set_doc_responses(200, 404, 500))
     @exception_handler
     def get(self, id_):
+        """Get action by id."""
         if pet := PetModel.get_by_id(id_):
             return self.send(response_type="OK", result=pet.serialize)
         return self.send(response_type="NOT FOUND")

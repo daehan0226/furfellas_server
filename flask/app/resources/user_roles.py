@@ -10,12 +10,14 @@ from app.core.utils import set_doc_responses
 api = Namespace("user-roles", description="User role related operations")
 
 parser_post = reqparse.RequestParser()
-parser_post.add_argument("name", type=str, help="user_role name")
-parser_post.add_argument("description", type=str, help="user_role description")
+parser_post.add_argument("name", type=str, help="User role name")
+parser_post.add_argument("description", type=str, help="User role description")
 
 
 parser_auth = reqparse.RequestParser()
-parser_auth.add_argument("Authorization", type=str, location="headers")
+parser_auth.add_argument(
+    "Authorization", type=str, location="headers", help="Session token"
+)
 
 
 @api.route("/")
@@ -43,12 +45,10 @@ class UserRoles(Resource, CustomeResponse):
         return self.send(response_type="FORBIDDEN")
 
 
+@api.doc(params={"id_": "The user role identifier"})
 @api.route("/<int:id_>")
 class user_role(Resource, CustomeResponse):
-    @api.doc(
-        params={"id_": "The user role identifier"},
-        responses=set_doc_responses(200, 404, 500),
-    )
+    @api.doc(responses=set_doc_responses(200, 404, 500))
     @exception_handler
     def get(self, id_):
         """Get user role by id."""

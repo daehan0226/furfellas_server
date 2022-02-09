@@ -4,9 +4,13 @@ flask/__pychche__/*
 flask/test.db
 flask/alembic/*
 flask/alembic.ini
+flask/tmp/*
 
 *.logs
 *.log
 *.json
 *.pyc
 .env
+
+mysql/data/*
+mysql/backup/*

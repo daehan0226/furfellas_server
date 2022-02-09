@@ -20,14 +20,9 @@ from app.core.models import BaseModel
 from app.core.database import get_db_session
 from app.core.google_drive_api import GoogleDrive
 from app.core.utils import convert_to_datetime, convert_str_ids_to_int_ids_tuple
+from config import Config
 
-
-APP_ROOT = os.path.join(os.path.dirname(__file__), "..")
-dotenv_path = os.path.join(APP_ROOT, ".env")
-load_dotenv(dotenv_path)
-
-
-REMOVE_IMAGE_INTERVAL_SECONDS = int(os.getenv("REMOVE_IMAGE_INTERVAL_HOURS")) * 3600
+REMOVE_IMAGE_INTERVAL_SECONDS = Config.REMOVE_IMAGE_INTERVAL_HOURS
 
 
 lock = Lock()

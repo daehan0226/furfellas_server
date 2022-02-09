@@ -19,7 +19,7 @@ services:
     volumes:
       - ./nginx/log:/var/log/nginx
     ports:
-      - "8099:80"
+      - "9000:80"
     depends_on:
       - furfellas_app_server
 

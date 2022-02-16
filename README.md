@@ -38,5 +38,5 @@ API returns the following status codes:
 | 409 | `CONFLICT` |
 | 500 | `INTERNAL SERVER ERROR` |
 
-## [Endpoints - Swagger](http://3.38.254.137:33103/api/)
+## [Endpoints - Swagger](http://furfellas.api.foxlee.kr/v1/)
 ![image](https://user-images.githubusercontent.com/47915302/152996073-6756901c-1e6a-4dcf-83c7-87156ba9bb66.png)

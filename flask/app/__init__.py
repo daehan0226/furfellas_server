@@ -46,11 +46,11 @@ def create_app(config_name="dev"):
     except KeyError:
         raise ConfigTypeError
 
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/v1/*": {"origins": "*"}})
     db.init_app(app)
 
     from app.resources import blueprint as api
 
-    app.register_blueprint(api, url_prefix="/api")
+    app.register_blueprint(api, url_prefix="/v1")
 
     return app

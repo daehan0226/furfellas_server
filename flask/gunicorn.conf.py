@@ -1,5 +1,7 @@
+import os
 # https://docs.gunicorn.org/en/stable/settings.html
-bind = '0.0.0.0:8080'
+print('zzzzzzzzzzzzzzzz', os.getenv("PORT"))
+bind = f'0.0.0.0:{os.getenv("FLASK_PORT")}'
 worker_class = 'sync' # default = sync
 workers = 2 # default = 1
 loglevel = 'debug'
